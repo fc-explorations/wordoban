@@ -429,6 +429,7 @@
     let moves = 0;
     let won = false;
     let lastWordKey = "";
+    let feedback = null;
     const sprites = {
       block: loadSprite("assets/block.png"),
       player: loadSprite("assets/player.png")
@@ -627,13 +628,14 @@
       return seen.size === floorCount;
     }
 
-    function generateLevel() {
+    function generateLevel(forcedWord = null) {
       const size = normalizeBoardSize();
       const wallCount = Number(wallCountSelect.value);
       const minWallLength = normalizeWallLengths().min;
       const maxWallLength = Number(wallLengthSelect.value);
       const wordOptions = getWordsForLength(lengthSelect.value);
-      const word = chooseDifferentWord(wordOptions);
+      const word = forcedWord || chooseDifferentWord(wordOptions);
+      lastWordKey = word.word;
       const syllables = word.syllables;
       const targetY = 1;
       const startX = Math.floor((size - syllables.length) / 2);
@@ -994,8 +996,24 @@
       return true;
     }
 
-    function loadNewLevel() {
-      level = generateLevel();
+    function isTargetRowFull() {
+      return level.targetCells.every((target) => state.blocks.some((block) => block.pos === target));
+    }
+
+    function handleTargetCompletion() {
+      if (!isTargetRowFull()) return;
+      const correct = isGoal(level, state.blocks.map((block) => block.pos));
+      if (correct) {
+        won = true;
+        startFeedback("correct");
+      } else {
+        startFeedback("wrong", () => loadNewLevel(level.word));
+      }
+    }
+
+    function loadNewLevel(forcedWord = null) {
+      feedback = null;
+      level = generateLevel(forcedWord);
       initialState = {
         player: level.player,
         blocks: level.blocks.map((block) => ({ ...block }))
@@ -1011,6 +1029,7 @@
       };
       moves = 0;
       won = false;
+      feedback = null;
       updateMeta();
       draw();
     }
@@ -1030,7 +1049,7 @@
     }
 
     function movePlayer(dx, dy) {
-      if (!level || won) return;
+      if (!level || won || feedback) return;
       const player = posFromIdx(state.player, level.size);
       const nx = player.x + dx;
       const ny = player.y + dy;
@@ -1051,11 +1070,40 @@
         moves++;
       }
 
-      if (isGoal(level, state.blocks.map((block) => block.pos))) {
-        won = true;
-      }
+      handleTargetCompletion();
       updateMeta();
       draw();
+    }
+
+    function startFeedback(kind, onDone = null) {
+      feedback = {
+        kind,
+        onDone,
+        start: nowMs(),
+        duration: kind === "correct" ? 900 : 700
+      };
+      requestAnimationFrame(animateFeedback);
+    }
+
+    function animateFeedback(now) {
+      if (!feedback) return;
+      now = now || nowMs();
+      draw();
+      if (now - feedback.start >= feedback.duration) {
+        const done = feedback.onDone;
+        feedback = null;
+        if (done) {
+          done();
+        } else {
+          draw();
+        }
+        return;
+      }
+      requestAnimationFrame(animateFeedback);
+    }
+
+    function nowMs() {
+      return typeof performance !== "undefined" ? performance.now() : Date.now();
     }
 
     function draw() {
@@ -1091,6 +1139,8 @@
         drawText(String(i + 1), pos.x, pos.y, tile, "#5c4214", .42, 800);
       });
 
+      drawCompletionFeedback(tile);
+
       state.blocks.forEach((block) => {
         const pos = posFromIdx(block.pos, size);
         const x = pos.x * tile;
@@ -1123,6 +1173,33 @@
         ctx.stroke();
         drawText("P", player.x, player.y, tile, "#ffffff", .32, 900);
       }
+    }
+
+    function drawCompletionFeedback(tile) {
+      if (!feedback) return;
+      const elapsed = Math.min(1, (nowMs() - feedback.start) / feedback.duration);
+      const first = posFromIdx(level.targetCells[0], level.size);
+      const last = posFromIdx(level.targetCells[level.targetCells.length - 1], level.size);
+      const x = first.x * tile;
+      const y = first.y * tile;
+      const width = (last.x - first.x + 1) * tile;
+      const height = tile;
+      const expand = tile * (0.2 + elapsed * 1.25);
+      const alpha = 1 - elapsed;
+      const color = feedback.kind === "correct" ? "74, 222, 128" : "248, 113, 113";
+
+      ctx.save();
+      ctx.globalAlpha = alpha;
+      ctx.shadowColor = "rgba(" + color + ", 0.95)";
+      ctx.shadowBlur = 26 + elapsed * 38;
+      ctx.strokeStyle = "rgba(" + color + ", 0.85)";
+      ctx.lineWidth = Math.max(4, tile * 0.1);
+      roundRect(x - expand / 2, y - expand / 2, width + expand, height + expand, tile * 0.3 + expand * 0.2);
+      ctx.stroke();
+      ctx.globalAlpha = alpha * 0.18;
+      ctx.fillStyle = "rgb(" + color + ")";
+      ctx.fill();
+      ctx.restore();
     }
 
     function roundRect(x, y, width, height, radius) {
@@ -1183,7 +1260,7 @@
       settingsButton.focus();
     });
     resetButton.addEventListener("click", resetCurrentLevel);
-    newButton.addEventListener("click", loadNewLevel);
+    newButton.addEventListener("click", () => loadNewLevel());
     lengthSelect.addEventListener("input", updateSettingLabels);
     sizeSelect.addEventListener("input", updateSettingLabels);
     wallCountSelect.addEventListener("input", updateSettingLabels);
