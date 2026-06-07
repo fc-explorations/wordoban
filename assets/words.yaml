@@ -11,6 +11,24 @@
   - word: rain
     syllables: [RAIN]
     distractors: [RAY, RAN, REIN, MAIN]
+  - word: sun
+    syllables: [SUN]
+    distractors: [SIN, SON, SUD, RUN]
+  - word: fish
+    syllables: [FISH]
+    distractors: [FIST, DISH, FIN, WISH]
+  - word: book
+    syllables: [BOOK]
+    distractors: [BOO, BROOK, COOK, BACK]
+  - word: tree
+    syllables: [TREE]
+    distractors: [FREE, THREE, TRY, TEA]
+  - word: star
+    syllables: [STAR]
+    distractors: [STIR, TAR, START, FAR]
+  - word: hand
+    syllables: [HAND]
+    distractors: [HAD, HIND, LAND, HAT]
 
 2:
   - word: basket
@@ -25,6 +43,24 @@
   - word: rocket
     syllables: [ROCK, ET]
     distractors: [RAK, KIT, ROD, IT]
+  - word: apple
+    syllables: [AP, PLE]
+    distractors: [UP, PAL, PULL, APE]
+  - word: tiger
+    syllables: [TI, GER]
+    distractors: [TIE, GIR, TUG, HER]
+  - word: pencil
+    syllables: [PEN, CIL]
+    distractors: [PIN, SELL, PENCE, SIL]
+  - word: garden
+    syllables: [GAR, DEN]
+    distractors: [CAR, DIN, GUARD, TEN]
+  - word: muffin
+    syllables: [MUF, FIN]
+    distractors: [MUFF, FAN, MIN, FUN]
+  - word: window
+    syllables: [WIN, DOW]
+    distractors: [WIND, DO, WEN, BOW]
 
 3:
   - word: banana
@@ -42,6 +78,21 @@
   - word: dinosaur
     syllables: [DI, NO, SAUR]
     distractors: [DYE, NEW, SORE, DIN, NOR]
+  - word: animal
+    syllables: [AN, I, MAL]
+    distractors: [AM, E, MALL, ANT, MEAL]
+  - word: volcano
+    syllables: [VOL, CA, NO]
+    distractors: [VAL, CO, NEW, CAN, LOW]
+  - word: tomato
+    syllables: [TO, MA, TO]
+    distractors: [TOW, MOO, TWO, MAT, TOE]
+  - word: umbrella
+    syllables: [UM, BREL, LA]
+    distractors: [AM, BELL, LUH, BRIM, ELLA]
+  - word: kangaroo
+    syllables: [KAN, GA, ROO]
+    distractors: [CAN, GO, RUE, GUM, ROPE]
 
 4:
   - word: alligator
@@ -56,3 +107,21 @@
   - word: caterpillar
     syllables: [CAT, ER, PIL, LAR]
     distractors: [KAT, AR, PAL, LER, PILL, CART]
+  - word: macaroni
+    syllables: [MAC, A, RO, NI]
+    distractors: [MACK, UH, ROW, KNEE, RON, NICK]
+  - word: television
+    syllables: [TEL, E, VI, SION]
+    distractors: [TELL, EE, VIE, SHUN, VISION, SELL]
+  - word: rhinoceros
+    syllables: [RHI, NOC, ER, OS]
+    distractors: [RYE, KNOCK, AR, OZ, NOSE, CRESS]
+  - word: refrigerator
+    syllables: [RE, FRIG, ER, A, TOR]
+    distractors: [REE, FROG, AR, UH, DOOR, RATE]
+  - word: celebration
+    syllables: [CEL, E, BRA, TION]
+    distractors: [SELL, EE, BRAY, SHUN, RAY, TIN]
+  - word: imagination
+    syllables: [IM, AG, IN, A, TION]
+    distractors: [IN, EGG, AND, UH, SHUN, NATION]
