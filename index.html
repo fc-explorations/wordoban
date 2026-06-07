@@ -362,7 +362,7 @@
   </main>
 
   <script>
-    const WORDS = [
+    const DEFAULT_WORDS = [
       { word: "cat", syllables: ["CAT"], distractors: ["CAP", "CUT", "COT", "KAT"] },
       { word: "dog", syllables: ["DOG"], distractors: ["DIG", "DUG", "LOG", "DOT"] },
       { word: "moon", syllables: ["MOON"], distractors: ["MOO", "MUN", "NOON", "MAN"] },
@@ -381,6 +381,7 @@
       { word: "watermelon", syllables: ["WA", "TER", "MEL", "ON"], distractors: ["WAY", "DER", "MAIL", "AN", "WET", "MELON"] },
       { word: "caterpillar", syllables: ["CAT", "ER", "PIL", "LAR"], distractors: ["KAT", "AR", "PAL", "LER", "PILL", "CART"] }
     ];
+    let WORDS = DEFAULT_WORDS.slice();
 
     const TILE = {
       FLOOR: 0,
@@ -455,6 +456,50 @@
         if (lengthValue === "4") return entry.syllables.length >= 4;
         return entry.syllables.length === Number(lengthValue);
       });
+    }
+
+    async function loadWords() {
+      if (!window.fetch) return;
+      try {
+        const response = await fetch("assets/words.yaml", { cache: "no-store" });
+        if (!response.ok) return;
+        const parsed = parseWordsYaml(await response.text());
+        if (parsed.length) WORDS = parsed;
+      } catch (error) {
+        WORDS = DEFAULT_WORDS.slice();
+      }
+    }
+
+    function parseWordsYaml(source) {
+      const words = [];
+      let current = null;
+
+      source.split(/\r?\n/).forEach((line) => {
+        const group = line.match(/^(\d+):\s*$/);
+        if (group) {
+          current = null;
+          return;
+        }
+
+        const item = line.match(/^\s*-\s+word:\s*"?([^"]+?)"?\s*$/);
+        if (item) {
+          current = { word: item[1], syllables: [], distractors: [] };
+          words.push(current);
+          return;
+        }
+
+        if (!current) return;
+        const field = line.match(/^\s+(syllables|distractors):\s*\[(.*)\]\s*$/);
+        if (!field) return;
+        current[field[1]] = parseYamlInlineList(field[2]);
+      });
+
+      return words.filter((entry) => entry.word && entry.syllables.length && entry.distractors.length);
+    }
+
+    function parseYamlInlineList(value) {
+      if (!value.trim()) return [];
+      return value.split(",").map((item) => item.trim().replace(/^"|"$/g, ""));
     }
 
     function distractorCount(syllableCount, size) {
@@ -986,8 +1031,13 @@
       }
     };
 
-    updateSettingLabels();
-    loadNewLevel();
+    async function initializeGame() {
+      await loadWords();
+      updateSettingLabels();
+      loadNewLevel();
+    }
+
+    initializeGame();
   </script>
 </body>
 </html>

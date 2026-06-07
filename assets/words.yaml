@@ -1,0 +1,58 @@
+1:
+  - word: cat
+    syllables: [CAT]
+    distractors: [CAP, CUT, COT, KAT]
+  - word: dog
+    syllables: [DOG]
+    distractors: [DIG, DUG, LOG, DOT]
+  - word: moon
+    syllables: [MOON]
+    distractors: [MOO, MUN, NOON, MAN]
+  - word: rain
+    syllables: [RAIN]
+    distractors: [RAY, RAN, REIN, MAIN]
+
+2:
+  - word: basket
+    syllables: [BAS, KET]
+    distractors: [BAT, KIT, BASK, SET]
+  - word: turtle
+    syllables: [TUR, TLE]
+    distractors: [TER, TALL, TIR, DLE]
+  - word: sunset
+    syllables: [SUN, SET]
+    distractors: [SIN, SIT, SENT, SUP]
+  - word: rocket
+    syllables: [ROCK, ET]
+    distractors: [RAK, KIT, ROD, IT]
+
+3:
+  - word: banana
+    syllables: [BA, NA, NA]
+    distractors: [BO, NAN, NO, BAN]
+  - word: butterfly
+    syllables: [BUT, TER, FLY]
+    distractors: [BAT, DER, FLEE, BUTT, TIE]
+  - word: elephant
+    syllables: [EL, E, PHANT]
+    distractors: [AL, EE, FANT, PLANT, ANT]
+  - word: computer
+    syllables: [COM, PU, TER]
+    distractors: [CON, POO, DER, CUE, TERM]
+  - word: dinosaur
+    syllables: [DI, NO, SAUR]
+    distractors: [DYE, NEW, SORE, DIN, NOR]
+
+4:
+  - word: alligator
+    syllables: [AL, LI, GA, TOR]
+    distractors: [EL, LEE, GO, DOOR, GATE, TAR]
+  - word: helicopter
+    syllables: [HEL, I, COP, TER]
+    distractors: [HILL, EE, CAP, DER, COPPER, TUR]
+  - word: watermelon
+    syllables: [WA, TER, MEL, ON]
+    distractors: [WAY, DER, MAIL, AN, WET, MELON]
+  - word: caterpillar
+    syllables: [CAT, ER, PIL, LAR]
+    distractors: [KAT, AR, PAL, LER, PILL, CART]
