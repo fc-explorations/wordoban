@@ -29,6 +29,36 @@
   - word: hand
     syllables: [HAND]
     distractors: [HAD, HIND, LAND, HAT]
+  - word: ball
+    syllables: [BALL]
+    distractors: [BELL, BULL, FALL, BALE]
+  - word: cake
+    syllables: [CAKE]
+    distractors: [CANE, CAPE, TAKE, KICK]
+  - word: milk
+    syllables: [MILK]
+    distractors: [MILL, MICK, SILK, MINT]
+  - word: sock
+    syllables: [SOCK]
+    distractors: [SACK, SICK, ROCK, SOAK]
+  - word: bird
+    syllables: [BIRD]
+    distractors: [BURN, BARD, WORD, BID]
+  - word: ship
+    syllables: [SHIP]
+    distractors: [SHOP, SHIPT, SIP, CHIP]
+  - word: leaf
+    syllables: [LEAF]
+    distractors: [LEAP, LIFE, LOAF, BEEF]
+  - word: chair
+    syllables: [CHAIR]
+    distractors: [CHEER, SHARE, CHAIRR, AIR]
+  - word: clock
+    syllables: [CLOCK]
+    distractors: [CLOK, BLOCK, CLICK, LOCK]
+  - word: bread
+    syllables: [BREAD]
+    distractors: [BRAD, RED, BREED, BED]
 
 2:
   - word: basket
@@ -61,6 +91,36 @@
   - word: window
     syllables: [WIN, DOW]
     distractors: [WIND, DO, WEN, BOW]
+  - word: rabbit
+    syllables: [RAB, BIT]
+    distractors: [RAP, BAT, RIB, BET]
+  - word: picnic
+    syllables: [PIC, NIC]
+    distractors: [PICK, NICK, PIG, KNIT]
+  - word: ladder
+    syllables: [LAD, DER]
+    distractors: [LED, DARE, LADLE, DIRT]
+  - word: toothbrush
+    syllables: [TOOTH, BRUSH]
+    distractors: [TOO, BRASH, TUSH, BROOM]
+  - word: bedroom
+    syllables: [BED, ROOM]
+    distractors: [BAD, RUM, BROOM, RED]
+  - word: paper
+    syllables: [PA, PER]
+    distractors: [PAY, PURR, PEP, PAR]
+  - word: music
+    syllables: [MU, SIC]
+    distractors: [MOO, SICK, MUSE, SIT]
+  - word: kitten
+    syllables: [KIT, TEN]
+    distractors: [KITE, TIN, KIN, DEN]
+  - word: ocean
+    syllables: [O, CEAN]
+    distractors: [OH, SEEN, SHUN, CAN]
+  - word: candle
+    syllables: [CAN, DLE]
+    distractors: [CANE, DELL, CANDY, DO]
 
 3:
   - word: banana
@@ -93,6 +153,36 @@
   - word: kangaroo
     syllables: [KAN, GA, ROO]
     distractors: [CAN, GO, RUE, GUM, ROPE]
+  - word: family
+    syllables: [FAM, I, LY]
+    distractors: [FAN, EE, LEE, FAME, LIE]
+  - word: hospital
+    syllables: [HOS, PI, TAL]
+    distractors: [HOP, PIE, TALL, HOST, PAL]
+  - word: library
+    syllables: [LI, BRAR, Y]
+    distractors: [LEE, BAR, WHY, BRAG, RYE]
+  - word: basketball
+    syllables: [BAS, KET, BALL]
+    distractors: [BAT, KIT, BELL, BASK, CALL]
+  - word: tomorrow
+    syllables: [TO, MOR, ROW]
+    distractors: [TOW, MORE, ROE, MOW, TWO]
+  - word: octopus
+    syllables: [OC, TO, PUS]
+    distractors: [OCK, TOW, PASS, OPT, BUS]
+  - word: holiday
+    syllables: [HOL, I, DAY]
+    distractors: [HALL, EE, DYE, HOLD, PLAY]
+  - word: chocolate
+    syllables: [CHOC, O, LATE]
+    distractors: [CHALK, OH, LAY, CHOP, LET]
+  - word: bicycle
+    syllables: [BI, CY, CLE]
+    distractors: [BY, SIGH, CULL, CYCLE, BEE]
+  - word: pajamas
+    syllables: [PA, JA, MAS]
+    distractors: [PAY, JAW, MESS, JAM, PASS]
 
 4:
   - word: alligator
@@ -125,3 +215,33 @@
   - word: imagination
     syllables: [IM, AG, IN, A, TION]
     distractors: [IN, EGG, AND, UH, SHUN, NATION]
+  - word: encyclopedia
+    syllables: [EN, CY, CLO, PE, DI, A]
+    distractors: [IN, SIGH, GLOW, PAY, DEE, UH]
+  - word: hippopotamus
+    syllables: [HIP, PO, POT, A, MUS]
+    distractors: [HIT, PAW, PAT, UH, MESS, MOUSE]
+  - word: kindergarten
+    syllables: [KIN, DER, GAR, TEN]
+    distractors: [KIND, DARE, CAR, TIN, GARDEN, DEN]
+  - word: auditorium
+    syllables: [AU, DI, TOR, I, UM]
+    distractors: [AW, DYE, DOOR, EE, AM, TORN]
+  - word: electricity
+    syllables: [E, LEC, TRI, CI, TY]
+    distractors: [EE, LICK, TRY, SEE, TIE, CITY]
+  - word: photography
+    syllables: [PHO, TOG, RA, PHY]
+    distractors: [FOE, TUG, RAY, FEE, PHOTO, GRAPH]
+  - word: university
+    syllables: [U, NI, VER, SI, TY]
+    distractors: [YOU, KNEE, FUR, SEE, TIE, CITY]
+  - word: calculator
+    syllables: [CAL, CU, LA, TOR]
+    distractors: [CALL, CUE, LAY, DOOR, CAT, TAR]
+  - word: dictionary
+    syllables: [DIC, TION, AR, Y]
+    distractors: [DUCK, SHUN, AIR, WHY, TIN, DARE]
+  - word: cafeteria
+    syllables: [CAF, E, TER, I, A]
+    distractors: [CALF, EE, TUR, EYE, UH, TARE]
