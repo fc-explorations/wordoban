@@ -76,7 +76,7 @@
     .toolbar-actions {
       display: flex;
       align-items: center;
-      gap: 8px;
+      gap: 22px;
       flex-wrap: wrap;
     }
 
@@ -152,7 +152,7 @@
       height: 34px;
       display: inline-grid;
       place-items: center;
-      color: var(--ink);
+      color: var(--accent);
       font-size: 1.55rem;
       line-height: 1;
     }
@@ -164,6 +164,42 @@
       display: inline-grid;
       place-items: center;
       font-size: 1.15rem;
+    }
+
+    .command-button,
+    .toolbar-actions .icon-button,
+    .settings-actions button,
+    #closeSettingsButton {
+      border: 0;
+      background: transparent;
+      color: var(--accent);
+      min-height: 38px;
+      padding: 0;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      font-weight: 800;
+      box-shadow: none;
+    }
+
+    .command-button:hover,
+    .toolbar-actions .icon-button:hover,
+    .settings-actions button:hover,
+    #closeSettingsButton:hover {
+      border: 0;
+      background: transparent;
+      color: #25599f;
+    }
+
+    .command-icon {
+      display: inline-grid;
+      place-items: center;
+      width: 1.2em;
+      height: 1.2em;
+      flex: 0 0 auto;
+      font-size: 1.1em;
+      line-height: 1;
     }
 
     .setup-trigger {
@@ -260,7 +296,7 @@
 
     .section-icon.walls {
       background: #e9eef5;
-      color: #26364b;
+      color: var(--accent);
     }
 
     .section-icon.solution {
@@ -282,19 +318,19 @@
     .settings-actions {
       display: grid;
       grid-template-columns: 1fr 1.3fr;
-      gap: 10px;
+      gap: 18px;
       padding-top: 0;
     }
 
     button.secondary-action {
-      border-color: #c4cedd;
-      background: #fff;
+      border-color: transparent;
+      background: transparent;
     }
 
     button.success-action {
-      border-color: var(--accent);
-      background: var(--accent);
-      color: #fff;
+      border-color: transparent;
+      background: transparent;
+      color: var(--accent);
       font-weight: 850;
     }
 
@@ -345,9 +381,9 @@
     }
 
     button.primary {
-      border-color: #2f66b3;
-      background: #2f66b3;
-      color: #fff;
+      border-color: transparent;
+      background: transparent;
+      color: var(--accent);
     }
 
     button.icon-label {
@@ -436,8 +472,11 @@
         <p class="subtitle">Hear the word, choose the right syllables, push them into the target row.</p>
       </div>
       <div class="toolbar-actions">
-        <button id="newButton" type="button">New Puzzle</button>
-        <button class="primary icon-label" id="speakButton" type="button">
+        <button class="command-button" id="newButton" type="button">
+          <span class="command-icon" aria-hidden="true">↻</span>
+          <span>New Puzzle</span>
+        </button>
+        <button class="primary icon-label command-button" id="speakButton" type="button">
           <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
             <path fill="currentColor" d="M4 9.5v5h3.4l4.1 3.4c.7.6 1.8.1 1.8-.8V6.9c0-.9-1.1-1.4-1.8-.8L7.4 9.5H4Z"></path>
             <path fill="none" stroke="currentColor" stroke-linecap="round" stroke-width="2.2" d="M16 9c.8.8 1.2 1.8 1.2 3s-.4 2.2-1.2 3"></path>
@@ -547,8 +586,14 @@
       </section>
 
       <div class="settings-actions">
-        <button class="secondary-action" id="settingsResetButton" type="button">Reset to Defaults</button>
-        <button class="success-action" id="settingsGenerateButton" type="button">Generate New Puzzle</button>
+        <button class="secondary-action" id="settingsResetButton" type="button">
+          <span class="command-icon" aria-hidden="true">↺</span>
+          <span>Reset to Defaults</span>
+        </button>
+        <button class="success-action" id="settingsGenerateButton" type="button">
+          <span class="command-icon" aria-hidden="true">✦</span>
+          <span>Generate New Puzzle</span>
+        </button>
       </div>
     </aside>
   </main>
