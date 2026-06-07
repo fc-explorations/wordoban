@@ -421,6 +421,8 @@
       padding: 0;
       font-size: 1.2rem;
       line-height: 1;
+      touch-action: manipulation;
+      user-select: none;
     }
 
     .dpad .up {
@@ -678,6 +680,7 @@
     let won = false;
     let wordCycles = {};
     let feedback = null;
+    let boardPointerStart = null;
     const sprites = {
       block: loadSprite("assets/block.png"),
       player: loadSprite("assets/player.png"),
@@ -1913,11 +1916,46 @@
       movePlayer(dir[0], dir[1]);
     });
 
+    function moveFromDirectionValue(value) {
+      const [dx, dy] = value.split(",").map(Number);
+      movePlayer(dx, dy);
+    }
+
     document.querySelectorAll("[data-dir]").forEach((button) => {
       button.addEventListener("click", () => {
-        const [dx, dy] = button.dataset.dir.split(",").map(Number);
-        movePlayer(dx, dy);
+        moveFromDirectionValue(button.dataset.dir);
       });
+      button.addEventListener("pointerdown", (event) => {
+        if (event.pointerType === "mouse") return;
+        event.preventDefault();
+        moveFromDirectionValue(button.dataset.dir);
+      });
+    });
+
+    canvas.addEventListener("pointerdown", (event) => {
+      if (event.pointerType === "mouse") return;
+      event.preventDefault();
+      boardPointerStart = { x: event.clientX, y: event.clientY, id: event.pointerId };
+      canvas.setPointerCapture?.(event.pointerId);
+    });
+
+    canvas.addEventListener("pointerup", (event) => {
+      if (!boardPointerStart || boardPointerStart.id !== event.pointerId) return;
+      event.preventDefault();
+      const dx = event.clientX - boardPointerStart.x;
+      const dy = event.clientY - boardPointerStart.y;
+      boardPointerStart = null;
+      const threshold = Math.max(18, Math.min(canvas.clientWidth || 320, canvas.clientHeight || 320) * 0.045);
+      if (Math.max(Math.abs(dx), Math.abs(dy)) < threshold) return;
+      if (Math.abs(dx) > Math.abs(dy)) {
+        movePlayer(dx > 0 ? 1 : -1, 0);
+      } else {
+        movePlayer(0, dy > 0 ? 1 : -1);
+      }
+    });
+
+    canvas.addEventListener("pointercancel", () => {
+      boardPointerStart = null;
     });
 
     speakButton.addEventListener("click", speakWord);
