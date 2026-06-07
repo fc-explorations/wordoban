@@ -1994,6 +1994,12 @@
       boardPointerStart = null;
     });
 
+    function closeSettingsPanel(focusButton = false) {
+      settingsPanel.hidden = true;
+      settingsButton.setAttribute("aria-expanded", "false");
+      if (focusButton) settingsButton.focus();
+    }
+
     speakButton.addEventListener("click", speakWord);
     settingsButton.addEventListener("click", () => {
       const opening = settingsPanel.hidden;
@@ -2001,14 +2007,16 @@
       settingsButton.setAttribute("aria-expanded", String(opening));
     });
     closeSettingsButton.addEventListener("click", () => {
-      settingsPanel.hidden = true;
-      settingsButton.setAttribute("aria-expanded", "false");
-      settingsButton.focus();
+      closeSettingsPanel(true);
+    });
+    document.addEventListener("pointerdown", (event) => {
+      if (settingsPanel.hidden) return;
+      if (settingsPanel.contains(event.target) || settingsButton.contains(event.target)) return;
+      closeSettingsPanel();
     });
     settingsResetButton.addEventListener("click", resetSettingsToDefaults);
     settingsGenerateButton.addEventListener("click", () => {
-      settingsPanel.hidden = true;
-      settingsButton.setAttribute("aria-expanded", "false");
+      closeSettingsPanel();
       saveSettings();
       loadNewLevel();
     });
