@@ -1639,6 +1639,7 @@
         playFanfare();
         setTimeout(() => loadNewLevel(), 2000);
       } else {
+        playWrongDong();
         startFeedback("wrong", () => loadNewLevel(level.word));
       }
     }
@@ -1706,6 +1707,28 @@
         oscillator.stop(audio.currentTime + note.start + note.length + .03);
       });
       setTimeout(() => audio.close(), 900);
+    }
+
+    function playWrongDong() {
+      const AudioContext = window.AudioContext || window.webkitAudioContext;
+      if (!AudioContext) return;
+      const audio = new AudioContext();
+      const output = audio.createGain();
+      output.gain.setValueAtTime(0.0001, audio.currentTime);
+      output.gain.exponentialRampToValueAtTime(0.22, audio.currentTime + .025);
+      output.gain.exponentialRampToValueAtTime(0.0001, audio.currentTime + .9);
+      output.connect(audio.destination);
+
+      [110, 82.41].forEach((pitch, index) => {
+        const oscillator = audio.createOscillator();
+        oscillator.type = index === 0 ? "sine" : "triangle";
+        oscillator.frequency.setValueAtTime(pitch, audio.currentTime);
+        oscillator.frequency.exponentialRampToValueAtTime(pitch * 0.86, audio.currentTime + .9);
+        oscillator.connect(output);
+        oscillator.start(audio.currentTime);
+        oscillator.stop(audio.currentTime + .95);
+      });
+      setTimeout(() => audio.close(), 1100);
     }
 
     function movePlayer(dx, dy) {
