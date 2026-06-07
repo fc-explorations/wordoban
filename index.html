@@ -1542,7 +1542,11 @@
       const y = gridY * tile;
       if (sprites.wall.ready) {
         const overlap = tile * .055;
+        ctx.save();
+        roundRect(x, y, tile, tile, Math.max(6, tile * .14));
+        ctx.clip();
         ctx.drawImage(sprites.wall.image, x - overlap, y - overlap, tile + overlap * 2, tile + overlap * 2);
+        ctx.restore();
         return;
       }
       ctx.fillStyle = "#2f3947";
