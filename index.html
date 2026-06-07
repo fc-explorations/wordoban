@@ -97,17 +97,20 @@
     }
 
     aside {
-      width: min(360px, calc(100% - 24px));
+      width: min(560px, calc(100% - 24px));
       border: 1px solid var(--line);
       background: var(--panel);
-      padding: 14px;
+      padding: 26px;
       display: grid;
-      gap: 16px;
+      gap: 18px;
       position: fixed;
-      top: 92px;
-      right: 18px;
+      top: 74px;
+      right: 26px;
       z-index: 10;
-      box-shadow: 0 18px 45px rgba(31, 41, 55, .16);
+      max-height: calc(100vh - 96px);
+      overflow: auto;
+      border-radius: 18px;
+      box-shadow: 0 22px 55px rgba(31, 41, 55, .18);
     }
 
     aside[hidden] {
@@ -116,17 +119,41 @@
 
     .settings-head {
       display: flex;
-      align-items: center;
+      align-items: start;
       justify-content: space-between;
-      gap: 12px;
+      gap: 16px;
       border-bottom: 1px solid var(--line);
-      padding-bottom: 10px;
+      padding-bottom: 16px;
+    }
+
+    .settings-title {
+      display: flex;
+      align-items: center;
+      gap: 14px;
     }
 
     .settings-head h2 {
       margin: 0;
-      font-size: 1rem;
+      font-size: 1.55rem;
       letter-spacing: 0;
+      text-transform: uppercase;
+    }
+
+    .settings-head p {
+      margin: 4px 0 0;
+      color: var(--muted);
+      font-size: .95rem;
+      font-weight: 600;
+    }
+
+    .settings-gear {
+      width: 42px;
+      height: 42px;
+      display: inline-grid;
+      place-items: center;
+      color: var(--ink);
+      font-size: 2rem;
+      line-height: 1;
     }
 
     .icon-button {
@@ -155,15 +182,103 @@
       font-size: .9rem;
       font-weight: 800;
       white-space: nowrap;
+      border: 1px solid #d8dee8;
+      border-radius: 6px;
+      background: #fff;
+      min-width: 94px;
+      padding: 8px 10px;
+      text-align: center;
     }
 
     label,
     .group-label {
-      font-size: .78rem;
-      font-weight: 800;
-      color: var(--muted);
+      font-size: .95rem;
+      font-weight: 700;
+      color: var(--ink);
+      text-transform: none;
+      letter-spacing: 0;
+    }
+
+    .settings-section {
+      border-bottom: 1px solid var(--line);
+      padding-bottom: 18px;
+      display: grid;
+      gap: 14px;
+    }
+
+    .settings-section:last-of-type {
+      border-bottom: 0;
+      padding-bottom: 0;
+    }
+
+    .section-title {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      color: #2f66b3;
+      font-size: .98rem;
+      font-weight: 900;
+      letter-spacing: .03em;
       text-transform: uppercase;
-      letter-spacing: .08em;
+    }
+
+    .section-icon {
+      width: 34px;
+      height: 34px;
+      display: inline-grid;
+      place-items: center;
+      border-radius: 10px;
+      background: #edf4ff;
+      color: #2f66b3;
+      box-shadow: inset 0 0 0 1px rgba(47, 102, 179, .18);
+    }
+
+    .section-icon.word {
+      border-radius: 50%;
+      background: #fbf3ff;
+      color: #8a47bd;
+      box-shadow: inset 0 0 0 2px rgba(138, 71, 189, .28);
+      font-weight: 900;
+    }
+
+    .section-icon.walls {
+      background: #e9eef5;
+      color: #26364b;
+    }
+
+    .section-icon.solution {
+      border-radius: 50%;
+      background: #effaf4;
+      color: #2f9b63;
+      box-shadow: inset 0 0 0 2px rgba(47, 155, 99, .28);
+    }
+
+    .range-labels {
+      display: flex;
+      justify-content: space-between;
+      color: #536176;
+      font-size: .82rem;
+      font-weight: 700;
+      padding: 0 3px;
+    }
+
+    .settings-actions {
+      display: grid;
+      grid-template-columns: 1fr 1.3fr;
+      gap: 14px;
+      padding-top: 2px;
+    }
+
+    button.secondary-action {
+      border-color: #c4cedd;
+      background: #fff;
+    }
+
+    button.success-action {
+      border-color: #39a56b;
+      background: #39a56b;
+      color: #fff;
+      font-weight: 850;
     }
 
     select,
@@ -278,6 +393,11 @@
       aside {
         top: 86px;
         right: 12px;
+        padding: 20px;
+      }
+
+      .settings-actions {
+        grid-template-columns: 1fr;
       }
 
       canvas {
@@ -320,48 +440,94 @@
 
     <aside id="settingsPanel" hidden>
       <div class="settings-head">
-        <h2>Setup</h2>
+        <div class="settings-title">
+          <span class="settings-gear" aria-hidden="true">⚙</span>
+          <div>
+            <h2>Setup</h2>
+            <p>Customize your puzzle difficulty.</p>
+          </div>
+        </div>
         <button class="icon-button" id="closeSettingsButton" type="button" aria-label="Close setup">×</button>
       </div>
 
-      <div class="control-group">
-        <div class="control-heading">
-          <label for="lengthSelect">Word length</label>
-          <span class="control-value" id="lengthValue">2 syllables</span>
+      <section class="settings-section" aria-label="Word settings">
+        <div class="section-title"><span class="section-icon word">W</span><span>Word</span></div>
+        <div class="control-group">
+          <div class="control-heading">
+            <label for="lengthSelect">Word length (syllables)</label>
+            <span class="control-value" id="lengthValue">2 syllables</span>
+          </div>
+          <input id="lengthSelect" type="range" min="1" max="4" step="1" value="2">
+          <div class="range-labels" aria-hidden="true"><span>1</span><span>2</span><span>3</span><span>4+</span></div>
         </div>
-        <input id="lengthSelect" type="range" min="1" max="4" step="1" value="2">
-      </div>
+      </section>
 
-      <div class="control-group">
-        <div class="control-heading">
-          <label for="sizeSelect">Board size</label>
-          <span class="control-value" id="sizeValue">12 x 12</span>
+      <section class="settings-section" aria-label="Board settings">
+        <div class="section-title"><span class="section-icon">▦</span><span>Board</span></div>
+        <div class="control-group">
+          <div class="control-heading">
+            <label for="sizeSelect">Board size</label>
+            <span class="control-value" id="sizeValue">12 x 12</span>
+          </div>
+          <input id="sizeSelect" type="range" min="12" max="20" step="1" value="12">
+          <div class="range-labels" aria-hidden="true"><span>12</span><span>16</span><span>20</span></div>
         </div>
-        <input id="sizeSelect" type="range" min="12" max="20" step="1" value="12">
-      </div>
+      </section>
 
-      <div class="control-group">
-        <div class="control-heading">
-          <label for="wallCountSelect">Wall segments</label>
-          <span class="control-value" id="wallCountValue">8 walls</span>
+      <section class="settings-section" aria-label="Wall settings">
+        <div class="section-title"><span class="section-icon walls">■</span><span>Walls</span></div>
+        <div class="control-group">
+          <div class="control-heading">
+            <label for="wallCountSelect">Wall segments (total)</label>
+            <span class="control-value" id="wallCountValue">8 walls</span>
+          </div>
+          <input id="wallCountSelect" type="range" min="0" max="20" step="4" value="8">
+          <div class="range-labels" aria-hidden="true"><span>0</span><span>8</span><span>20</span></div>
         </div>
-        <input id="wallCountSelect" type="range" min="0" max="20" step="4" value="8">
-      </div>
 
-      <div class="control-group">
-        <div class="control-heading">
-          <label for="wallMinLengthSelect">Min wall length</label>
-          <span class="control-value" id="wallMinLengthValue">1 tile</span>
+        <div class="control-group">
+          <div class="control-heading">
+            <label for="wallMinLengthSelect">Min wall length</label>
+            <span class="control-value" id="wallMinLengthValue">1 tile</span>
+          </div>
+          <input id="wallMinLengthSelect" type="range" min="1" max="6" step="1" value="1">
+          <div class="range-labels" aria-hidden="true"><span>1</span><span>3</span><span>6</span></div>
         </div>
-        <input id="wallMinLengthSelect" type="range" min="1" max="6" step="1" value="1">
-      </div>
 
-      <div class="control-group">
-        <div class="control-heading">
-          <label for="wallLengthSelect">Max wall length</label>
-          <span class="control-value" id="wallLengthValue">3 tiles</span>
+        <div class="control-group">
+          <div class="control-heading">
+            <label for="wallLengthSelect">Max wall length</label>
+            <span class="control-value" id="wallLengthValue">3 tiles</span>
+          </div>
+          <input id="wallLengthSelect" type="range" min="1" max="6" step="1" value="3">
+          <div class="range-labels" aria-hidden="true"><span>1</span><span>3</span><span>6</span></div>
         </div>
-        <input id="wallLengthSelect" type="range" min="1" max="6" step="1" value="3">
+      </section>
+
+      <section class="settings-section" aria-label="Solution settings">
+        <div class="section-title"><span class="section-icon solution">◎</span><span>Solution</span></div>
+        <div class="control-group">
+          <div class="control-heading">
+            <label for="dragMinSelect">Min solution moves</label>
+            <span class="control-value" id="dragMinValue">3 moves</span>
+          </div>
+          <input id="dragMinSelect" type="range" min="1" max="20" step="1" value="3">
+          <div class="range-labels" aria-hidden="true"><span>1</span><span>10</span><span>20</span></div>
+        </div>
+
+        <div class="control-group">
+          <div class="control-heading">
+            <label for="dragMaxSelect">Max solution moves</label>
+            <span class="control-value" id="dragMaxValue">8 moves</span>
+          </div>
+          <input id="dragMaxSelect" type="range" min="1" max="20" step="1" value="8">
+          <div class="range-labels" aria-hidden="true"><span>1</span><span>10</span><span>20</span></div>
+        </div>
+      </section>
+
+      <div class="settings-actions">
+        <button class="secondary-action" id="settingsResetButton" type="button">Reset to Defaults</button>
+        <button class="success-action" id="settingsGenerateButton" type="button">Generate New Puzzle</button>
       </div>
     </aside>
   </main>
@@ -403,6 +569,15 @@
     const GENERATION_ATTEMPTS = 6;
     const GENERATION_SOLVER_LIMIT = 8000;
     const FLOOR_PALETTE = { base: "#f7fbf4", soft: "#edf8ee", accent: "#e6f3f7", grid: "#b9d7d1" };
+    const DEFAULT_SETTINGS = {
+      length: 2,
+      size: 12,
+      wallCount: 8,
+      minWallLength: 1,
+      maxWallLength: 3,
+      minSolutionMoves: 3,
+      maxSolutionMoves: 8
+    };
 
     const canvas = document.getElementById("board");
     const ctx = canvas.getContext("2d");
@@ -411,15 +586,21 @@
     const wallCountSelect = document.getElementById("wallCountSelect");
     const wallMinLengthSelect = document.getElementById("wallMinLengthSelect");
     const wallLengthSelect = document.getElementById("wallLengthSelect");
+    const dragMinSelect = document.getElementById("dragMinSelect");
+    const dragMaxSelect = document.getElementById("dragMaxSelect");
     const lengthValue = document.getElementById("lengthValue");
     const sizeValue = document.getElementById("sizeValue");
     const wallCountValue = document.getElementById("wallCountValue");
     const wallMinLengthValue = document.getElementById("wallMinLengthValue");
     const wallLengthValue = document.getElementById("wallLengthValue");
+    const dragMinValue = document.getElementById("dragMinValue");
+    const dragMaxValue = document.getElementById("dragMaxValue");
     const speakButton = document.getElementById("speakButton");
     const settingsButton = document.getElementById("settingsButton");
     const settingsPanel = document.getElementById("settingsPanel");
     const closeSettingsButton = document.getElementById("closeSettingsButton");
+    const settingsResetButton = document.getElementById("settingsResetButton");
+    const settingsGenerateButton = document.getElementById("settingsGenerateButton");
     const resetButton = document.getElementById("resetButton");
     const newButton = document.getElementById("newButton");
 
@@ -642,6 +823,7 @@
       const wallCount = Number(wallCountSelect.value);
       const minWallLength = normalizeWallLengths().min;
       const maxWallLength = Number(wallLengthSelect.value);
+      const dragMoves = normalizeDragMoves();
       const wordOptions = getWordsForLength(lengthSelect.value);
       const word = forcedWord || chooseDifferentWord(wordOptions);
       lastWordKey = word.word;
@@ -652,25 +834,23 @@
 
       const reserved = new Set();
       for (let i = 0; i < syllables.length; i++) {
-        for (let y = targetY; y <= size - 3; y++) {
-          reserved.add(cellKey(startX + i, y));
-        }
+        reserved.add(cellKey(startX + i, targetY));
       }
       reserved.add(cellKey(Math.floor(size / 2), size - 2));
 
       for (let attempt = 0; attempt < GENERATION_ATTEMPTS; attempt++) {
         const grid = createGrid(size, reserved, wallCount, minWallLength, maxWallLength);
-        const occupied = new Set(targetCells.map((cell) => "t" + cell));
-
-        let player = idx(Math.floor(size / 2), Math.min(size - 2, targetY + 3), size);
-        if (occupied.has(String(player)) || grid[posFromIdx(player, size).y][posFromIdx(player, size).x] === TILE.WALL) {
-          player = idx(startX, Math.min(size - 2, targetY + 3), size);
-        }
-        occupied.add(String(player));
+        const occupied = new Set(targetCells.map((cell) => String(cell)));
 
         const count = distractorCount(syllables.length, size);
-        const blocks = createScatteredBlocks(word, count, grid, occupied, size, targetY + 2, startX);
+        const distractors = createDistractorBlocks(word, count, grid, occupied, size, targetY + 2);
+        if (!distractors) continue;
+        const blocks = createDraggedSolutionBlocks(word, grid, occupied, size, targetCells, dragMoves.min, dragMoves.max);
         if (!blocks) continue;
+
+        const player = findFreeCell(grid, occupied, size, targetY + 2);
+        if (player === null) continue;
+        occupied.add(String(player));
 
         const candidate = {
           size,
@@ -679,13 +859,15 @@
           targetCells,
           targetY,
           startX,
-          blocks,
+          blocks: shuffle(blocks.concat(distractors)),
           player,
           wallCount,
           minWallLength,
-          maxWallLength
+          maxWallLength,
+          minSolutionMoves: dragMoves.min,
+          maxSolutionMoves: dragMoves.max
         };
-        const solver = verifyConstructedSolution(candidate);
+        const solver = verifyDraggedConstruction(candidate);
         if (solver.solved) {
           candidate.solverStates = solver.states;
           candidate.solutionLength = solver.depth;
@@ -693,7 +875,89 @@
         }
       }
 
-      return generateFallbackLevel(size, word, targetCells, startX, targetY, wallCount, minWallLength, maxWallLength);
+      return generateFallbackLevel(size, word, targetCells, startX, targetY, wallCount, minWallLength, maxWallLength, dragMoves.min, dragMoves.max);
+    }
+
+    function createDistractorBlocks(word, distractorTotal, grid, occupied, size, minY) {
+      const blocks = [];
+      const distractors = shuffle(word.distractors).slice(0, distractorTotal);
+      for (let i = 0; i < distractors.length; i++) {
+        const pos = findFreeCell(grid, occupied, size, minY);
+        if (pos === null) return null;
+        blocks.push({ id: "d" + i, text: distractors[i], correct: false, pos });
+        occupied.add(String(pos));
+      }
+      return blocks;
+    }
+
+    function createDraggedSolutionBlocks(word, grid, occupied, size, targetCells, minMoves, maxMoves) {
+      const blocks = [];
+      for (let i = 0; i < word.syllables.length; i++) {
+        const targetMoves = minMoves + randInt(Math.max(1, maxMoves - minMoves + 1));
+        const dragged = dragBlockFromTarget(targetCells[i], grid, occupied, size, targetMoves, minMoves);
+        if (dragged === null) return null;
+        blocks.push({ id: "c" + i, text: word.syllables[i], correct: true, pos: dragged.pos, solutionMoves: dragged.moves });
+      }
+      return blocks;
+    }
+
+    function dragBlockFromTarget(startPos, grid, occupied, size, targetMoves, minMoves) {
+      let current = startPos;
+      let moves = 0;
+      for (let step = 0; step < targetMoves; step++) {
+        const currentPos = posFromIdx(current, size);
+        const options = shuffle(DIRS).filter((dir) => {
+          const nextX = currentPos.x + dir.x;
+          const nextY = currentPos.y + dir.y;
+          const standX = currentPos.x + dir.x * 2;
+          const standY = currentPos.y + dir.y * 2;
+          if (nextX <= 1 || nextY <= 0 || nextX >= size - 2 || nextY >= size - 2) return false;
+          const next = idx(nextX, nextY, size);
+          const stand = idx(standX, standY, size);
+          return isFloor({ grid }, nextX, nextY) &&
+            isFloor({ grid }, standX, standY) &&
+            !occupied.has(String(next)) &&
+            !occupied.has(String(stand));
+        });
+
+        if (!options.length) {
+          return moves >= minMoves && validDraggedPosition(current, size) ? { pos: current, moves } : null;
+        }
+
+        const dir = sample(options);
+        const next = idx(currentPos.x + dir.x, currentPos.y + dir.y, size);
+        occupied.delete(String(current));
+        current = next;
+        occupied.add(String(current));
+        moves++;
+      }
+      return moves >= minMoves && validDraggedPosition(current, size) ? { pos: current, moves } : null;
+    }
+
+    function validDraggedPosition(pos, size) {
+      const point = posFromIdx(pos, size);
+      return point.x > 1 && point.y > 2 && point.x < size - 2 && point.y < size - 2;
+    }
+
+    function verifyDraggedConstruction(candidate) {
+      let moves = 0;
+      if (candidate.blocks.filter((block) => block.correct).length !== candidate.word.syllables.length) {
+        return { solved: false, states: moves, depth: 0 };
+      }
+      for (const target of candidate.targetCells) {
+        if (candidate.blocks.some((block) => block.pos === target)) return { solved: false, states: moves, depth: 0 };
+      }
+      for (const block of candidate.blocks) {
+        const pos = posFromIdx(block.pos, candidate.size);
+        if (pos.x <= 1 || pos.y <= 1 || pos.x >= candidate.size - 2 || pos.y >= candidate.size - 2) {
+          return { solved: false, states: moves, depth: 0 };
+        }
+        if (block.correct) {
+          if (!validDraggedPosition(block.pos, candidate.size)) return { solved: false, states: moves, depth: 0 };
+          moves += block.solutionMoves || 0;
+        }
+      }
+      return { solved: true, states: moves, depth: moves };
     }
 
     function createScatteredBlocks(word, distractorTotal, grid, occupied, size, minY, startX) {
@@ -740,20 +1004,44 @@
       return { min, max };
     }
 
+    function normalizeDragMoves() {
+      const min = Math.max(1, Math.min(20, Math.round(Number(dragMinSelect.value) || 3)));
+      let max = Math.max(1, Math.min(20, Math.round(Number(dragMaxSelect.value) || 8)));
+      if (max < min) max = min;
+      dragMinSelect.value = String(min);
+      dragMaxSelect.value = String(max);
+      return { min, max };
+    }
+
     function updateSettingLabels() {
       const length = Number(lengthSelect.value);
       const size = normalizeBoardSize();
       const wallCount = Number(wallCountSelect.value);
       const wallLengths = normalizeWallLengths();
+      const dragMoves = normalizeDragMoves();
 
       lengthValue.textContent = length === 4 ? "4+ syllables" : length + " syllable" + (length === 1 ? "" : "s");
       sizeValue.textContent = size + " x " + size;
       wallCountValue.textContent = wallCount + " wall" + (wallCount === 1 ? "" : "s");
       wallMinLengthValue.textContent = wallLengths.min + " tile" + (wallLengths.min === 1 ? "" : "s");
       wallLengthValue.textContent = wallLengths.max + " tile" + (wallLengths.max === 1 ? "" : "s");
+      dragMinValue.textContent = dragMoves.min + " move" + (dragMoves.min === 1 ? "" : "s");
+      dragMaxValue.textContent = dragMoves.max + " move" + (dragMoves.max === 1 ? "" : "s");
     }
 
     function applySettingChange() {
+      updateSettingLabels();
+      loadNewLevel();
+    }
+
+    function resetSettingsToDefaults() {
+      lengthSelect.value = String(DEFAULT_SETTINGS.length);
+      sizeSelect.value = String(DEFAULT_SETTINGS.size);
+      wallCountSelect.value = String(DEFAULT_SETTINGS.wallCount);
+      wallMinLengthSelect.value = String(DEFAULT_SETTINGS.minWallLength);
+      wallLengthSelect.value = String(DEFAULT_SETTINGS.maxWallLength);
+      dragMinSelect.value = String(DEFAULT_SETTINGS.minSolutionMoves);
+      dragMaxSelect.value = String(DEFAULT_SETTINGS.maxSolutionMoves);
       updateSettingLabels();
       loadNewLevel();
     }
@@ -809,7 +1097,7 @@
       return sample(near.length ? near : cells).pos;
     }
 
-    function generateFallbackLevel(size, word, targetCells, startX, targetY, wallCount, minWallLength, maxWallLength) {
+    function generateFallbackLevel(size, word, targetCells, startX, targetY, wallCount, minWallLength, maxWallLength, minMoves, maxMoves) {
       const grid = Array.from({ length: size }, () => Array(size).fill(TILE.FLOOR));
       for (let y = 0; y < size; y++) {
         for (let x = 0; x < size; x++) {
@@ -818,11 +1106,14 @@
       }
 
       for (let attempt = 0; attempt < GENERATION_ATTEMPTS; attempt++) {
-        const occupied = new Set(targetCells.map((cell) => "t" + cell));
-        const player = idx(Math.floor(size / 2), targetY + 3, size);
-        occupied.add(String(player));
-        const blocks = createScatteredBlocks(word, distractorCount(word.syllables.length, size), grid, occupied, size, targetY + 2, startX);
+        const occupied = new Set(targetCells.map((cell) => String(cell)));
+        const distractors = createDistractorBlocks(word, distractorCount(word.syllables.length, size), grid, occupied, size, targetY + 2);
+        if (!distractors) continue;
+        const blocks = createDraggedSolutionBlocks(word, grid, occupied, size, targetCells, minMoves, maxMoves);
         if (!blocks) continue;
+        const player = findFreeCell(grid, occupied, size, targetY + 2);
+        if (player === null) continue;
+        occupied.add(String(player));
         const fallback = {
           size,
           grid,
@@ -830,13 +1121,15 @@
           targetCells,
           targetY,
           startX,
-          blocks,
+          blocks: shuffle(blocks.concat(distractors)),
           player,
           wallCount,
           minWallLength,
-          maxWallLength
+          maxWallLength,
+          minSolutionMoves: minMoves,
+          maxSolutionMoves: maxMoves
         };
-        const solver = verifyConstructedSolution(fallback);
+        const solver = verifyDraggedConstruction(fallback);
         if (solver.solved) {
           fallback.solverStates = solver.states;
           fallback.solutionLength = solver.depth;
@@ -844,39 +1137,49 @@
         }
       }
 
-      return generateSimpleFallbackLevel(size, word, targetCells, startX, targetY, wallCount, minWallLength, maxWallLength);
+      return generateSimpleFallbackLevel(size, word, targetCells, startX, targetY, wallCount, minWallLength, maxWallLength, minMoves, maxMoves);
     }
 
-    function generateSimpleFallbackLevel(size, word, targetCells, startX, targetY, wallCount, minWallLength, maxWallLength) {
+    function generateSimpleFallbackLevel(size, word, targetCells, startX, targetY, wallCount, minWallLength, maxWallLength, minMoves, maxMoves) {
       const grid = Array.from({ length: size }, () => Array(size).fill(TILE.FLOOR));
       for (let y = 0; y < size; y++) {
         for (let x = 0; x < size; x++) {
           if (x === 0 || y === 0 || x === size - 1 || y === size - 1) grid[y][x] = TILE.WALL;
         }
       }
-      const occupied = new Set(targetCells.map((cell) => "t" + cell));
-      const player = idx(Math.floor(size / 2), targetY + 3, size);
-      occupied.add(String(player));
-      const blocks = [];
-      word.syllables.forEach((text, i) => {
-        let pos = findColumnFreeCell(grid, occupied, size, targetY + 3, startX + i);
-        if (pos === null) pos = findFreeCell(grid, occupied, size, targetY + 2);
-        if (pos === null) return;
-        blocks.push({ id: "c" + i, text, correct: true, pos });
-        occupied.add(String(pos));
-      });
-      shuffle(word.distractors).slice(0, distractorCount(word.syllables.length, size)).forEach((text, i) => {
-        const pos = findFreeCell(grid, occupied, size, targetY + 2);
-        if (pos !== null) {
-          blocks.push({ id: "d" + i, text, correct: false, pos });
-          occupied.add(String(pos));
+
+      for (let attempt = 0; attempt < 40; attempt++) {
+        const occupied = new Set(targetCells.map((cell) => String(cell)));
+        const distractors = createDistractorBlocks(word, distractorCount(word.syllables.length, size), grid, occupied, size, targetY + 2);
+        if (!distractors) continue;
+        const blocks = createDraggedSolutionBlocks(word, grid, occupied, size, targetCells, minMoves, maxMoves);
+        if (!blocks) continue;
+        const player = findFreeCell(grid, occupied, size, targetY + 2);
+        if (player === null) continue;
+        const fallback = {
+          size,
+          grid,
+          word,
+          targetCells,
+          targetY,
+          startX,
+          blocks: shuffle(blocks.concat(distractors)),
+          player,
+          wallCount,
+          minWallLength,
+          maxWallLength,
+          minSolutionMoves: minMoves,
+          maxSolutionMoves: maxMoves
+        };
+        const solver = verifyDraggedConstruction(fallback);
+        if (solver.solved) {
+          fallback.solverStates = solver.states;
+          fallback.solutionLength = solver.depth;
+          return fallback;
         }
-      });
-      const fallback = { size, grid, word, targetCells, targetY, startX, blocks, player, wallCount, minWallLength, maxWallLength };
-      const solver = verifyConstructedSolution(fallback);
-      fallback.solverStates = solver.states;
-      fallback.solutionLength = solver.depth;
-      return fallback;
+      }
+
+      throw new Error("Unable to generate a dragged fallback level");
     }
 
     function verifyConstructedSolution(candidate) {
@@ -1247,7 +1550,8 @@
       const x = gridX * tile;
       const y = gridY * tile;
       if (sprite?.ready) {
-        ctx.drawImage(sprite.image, x + tile * .04, y + tile * .04, tile * .92, tile * .92);
+        const overlap = tile * .035;
+        ctx.drawImage(sprite.image, x - overlap, y - overlap, tile + overlap * 2, tile + overlap * 2);
         return;
       }
       ctx.fillStyle = "#2f3947";
@@ -1329,6 +1633,12 @@
       settingsButton.setAttribute("aria-expanded", "false");
       settingsButton.focus();
     });
+    settingsResetButton.addEventListener("click", resetSettingsToDefaults);
+    settingsGenerateButton.addEventListener("click", () => {
+      settingsPanel.hidden = true;
+      settingsButton.setAttribute("aria-expanded", "false");
+      loadNewLevel();
+    });
     resetButton.addEventListener("click", resetCurrentLevel);
     newButton.addEventListener("click", () => loadNewLevel());
     lengthSelect.addEventListener("input", updateSettingLabels);
@@ -1336,17 +1646,21 @@
     wallCountSelect.addEventListener("input", updateSettingLabels);
     wallMinLengthSelect.addEventListener("input", updateSettingLabels);
     wallLengthSelect.addEventListener("input", updateSettingLabels);
+    dragMinSelect.addEventListener("input", updateSettingLabels);
+    dragMaxSelect.addEventListener("input", updateSettingLabels);
     lengthSelect.addEventListener("change", applySettingChange);
     sizeSelect.addEventListener("change", applySettingChange);
     wallCountSelect.addEventListener("change", applySettingChange);
     wallMinLengthSelect.addEventListener("change", applySettingChange);
     wallLengthSelect.addEventListener("change", applySettingChange);
+    dragMinSelect.addEventListener("change", applySettingChange);
+    dragMaxSelect.addEventListener("change", applySettingChange);
     window.addEventListener("resize", draw);
 
     window.__wordobanTest = {
       generateLevel,
       solveLevel,
-      setSettings(length, size, wallCount, minWallLength, maxWallLength) {
+      setSettings(length, size, wallCount, minWallLength, maxWallLength, minMoves, maxMoves) {
         lengthSelect.value = String(length);
         sizeSelect.value = String(size);
         if (wallCount !== undefined) wallCountSelect.value = String(wallCount);
@@ -1356,6 +1670,8 @@
           if (minWallLength !== undefined) wallMinLengthSelect.value = String(minWallLength);
           if (maxWallLength !== undefined) wallLengthSelect.value = String(maxWallLength);
         }
+        if (minMoves !== undefined) dragMinSelect.value = String(minMoves);
+        if (maxMoves !== undefined) dragMaxSelect.value = String(maxMoves);
         updateSettingLabels();
       },
       current() {
