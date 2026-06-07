@@ -29,7 +29,9 @@
       margin: 0;
       min-height: 100vh;
       color: var(--ink);
-      background: #f7f8fb;
+      background:
+        linear-gradient(rgba(255, 255, 255, .22), rgba(255, 255, 255, .22)),
+        #f8f3e9 url("assets/background.jpg") center / cover fixed;
     }
 
     .app {
@@ -58,18 +60,16 @@
       letter-spacing: 0;
     }
 
+    .logo {
+      display: block;
+      width: min(330px, 70vw);
+      height: auto;
+    }
+
     .subtitle {
       margin: 8px 0 0;
       color: var(--muted);
       font-size: 1rem;
-    }
-
-    .toolbar {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: 12px;
-      flex-wrap: wrap;
     }
 
     .toolbar-actions {
@@ -269,20 +269,6 @@
       grid-row: 3;
     }
 
-    .meta {
-      display: grid;
-      gap: 8px;
-      font-size: .92rem;
-      color: var(--muted);
-      border-top: 1px solid var(--line);
-      padding-top: 14px;
-    }
-
-    .meta span {
-      color: var(--ink);
-      font-weight: 800;
-    }
-
     @media (max-width: 860px) {
       header {
         align-items: start;
@@ -304,10 +290,12 @@
   <main class="app">
     <header>
       <div>
-        <h1>Wordoban</h1>
+        <img class="logo" src="assets/logo.png" alt="Wordoban">
         <p class="subtitle">Hear the word, choose the right syllables, push them into the target row.</p>
       </div>
       <div class="toolbar-actions">
+        <button id="resetButton" type="button">Reset</button>
+        <button id="newButton" type="button">New Puzzle</button>
         <button class="primary icon-label" id="speakButton" type="button">
           <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
             <path fill="currentColor" d="M4 9.5v5h3.4l4.1 3.4c.7.6 1.8.1 1.8-.8V6.9c0-.9-1.1-1.4-1.8-.8L7.4 9.5H4Z"></path>
@@ -319,18 +307,6 @@
         <button class="icon-button" id="settingsButton" type="button" aria-label="Open setup" aria-expanded="false" aria-controls="settingsPanel">⚙</button>
       </div>
     </header>
-
-    <section class="toolbar" aria-label="Game controls">
-      <div class="toolbar-actions">
-        <button id="resetButton" type="button">Reset</button>
-        <button id="newButton" type="button">New Puzzle</button>
-      </div>
-      <div class="meta">
-        <div>Target: <span id="wordMeta">Heard only</span></div>
-        <div>Moves: <span id="moveMeta">0</span></div>
-        <div>Solver states: <span id="solverMeta">0</span></div>
-      </div>
-    </section>
 
     <section class="board-wrap" aria-label="Game board">
       <canvas id="board" width="900" height="900"></canvas>
@@ -416,6 +392,10 @@
       { x: 0, y: -1 }
     ];
 
+    const GENERATION_ATTEMPTS = 6;
+    const GENERATION_SOLVER_LIMIT = 8000;
+    const FLOOR_PALETTE = { base: "#f7fbf4", soft: "#edf8ee", accent: "#e6f3f7", grid: "#b9d7d1" };
+
     const canvas = document.getElementById("board");
     const ctx = canvas.getContext("2d");
     const lengthSelect = document.getElementById("lengthSelect");
@@ -432,9 +412,6 @@
     const closeSettingsButton = document.getElementById("closeSettingsButton");
     const resetButton = document.getElementById("resetButton");
     const newButton = document.getElementById("newButton");
-    const wordMeta = document.getElementById("wordMeta");
-    const moveMeta = document.getElementById("moveMeta");
-    const solverMeta = document.getElementById("solverMeta");
 
     let level = null;
     let initialState = null;
@@ -567,15 +544,18 @@
         attempts++;
         const horizontal = Math.random() < 0.5;
         const length = 1 + randInt(Math.max(1, maxWallLength));
-        const x = 1 + randInt(size - 2 - (horizontal ? length - 1 : 0));
-        const y = 1 + randInt(size - 2 - (horizontal ? 0 : length - 1));
+        const maxX = size - 3 - (horizontal ? length - 1 : 0);
+        const maxY = size - 3 - (horizontal ? 0 : length - 1);
+        if (maxX < 2 || maxY < 2) continue;
+        const x = 2 + randInt(maxX - 1);
+        const y = 2 + randInt(maxY - 1);
         const cells = [];
         let blocked = false;
 
         for (let i = 0; i < length; i++) {
           const cx = x + (horizontal ? i : 0);
           const cy = y + (horizontal ? 0 : i);
-          if (reserved.has(cellKey(cx, cy)) || grid[cy][cx] === TILE.WALL) {
+          if (reserved.has(cellKey(cx, cy)) || grid[cy][cx] === TILE.WALL || wallWouldTouch(grid, cx, cy)) {
             blocked = true;
             break;
           }
@@ -595,6 +575,16 @@
         }
       }
       return grid;
+    }
+
+    function wallWouldTouch(grid, x, y) {
+      for (let dy = -1; dy <= 1; dy++) {
+        for (let dx = -1; dx <= 1; dx++) {
+          if (dx === 0 && dy === 0) continue;
+          if (grid[y + dy]?.[x + dx] === TILE.WALL) return true;
+        }
+      }
+      return false;
     }
 
     function floorIsConnected(grid) {
@@ -640,23 +630,15 @@
 
       const reserved = new Set();
       for (let i = 0; i < syllables.length; i++) {
-        for (let y = targetY; y <= Math.min(size - 2, targetY + 3); y++) {
+        for (let y = targetY; y <= size - 3; y++) {
           reserved.add(cellKey(startX + i, y));
         }
       }
       reserved.add(cellKey(Math.floor(size / 2), size - 2));
 
-      for (let attempt = 0; attempt < 250; attempt++) {
+      for (let attempt = 0; attempt < GENERATION_ATTEMPTS; attempt++) {
         const grid = createGrid(size, reserved, wallCount, maxWallLength);
-        const blocks = [];
         const occupied = new Set(targetCells.map((cell) => "t" + cell));
-
-        syllables.forEach((text, i) => {
-          const x = startX + i;
-          const y = targetY + 1;
-          blocks.push({ id: "c" + i, text, correct: true, pos: idx(x, y, size) });
-          occupied.add(String(idx(x, y, size)));
-        });
 
         let player = idx(Math.floor(size / 2), Math.min(size - 2, targetY + 3), size);
         if (occupied.has(String(player)) || grid[posFromIdx(player, size).y][posFromIdx(player, size).x] === TILE.WALL) {
@@ -665,13 +647,8 @@
         occupied.add(String(player));
 
         const count = distractorCount(syllables.length, size);
-        const distractors = shuffle(word.distractors).slice(0, count);
-        for (let i = 0; i < distractors.length; i++) {
-          const pos = findFreeCell(grid, occupied, size, targetY + 2);
-          if (pos === null) break;
-          blocks.push({ id: "d" + i, text: distractors[i], correct: false, pos });
-          occupied.add(String(pos));
-        }
+        const blocks = createScatteredBlocks(word, count, grid, occupied, size, targetY + 2, startX);
+        if (!blocks) continue;
 
         const candidate = {
           size,
@@ -685,7 +662,7 @@
           wallCount,
           maxWallLength
         };
-        const solver = solveLevel(candidate, 70000);
+        const solver = verifyConstructedSolution(candidate);
         if (solver.solved) {
           candidate.solverStates = solver.states;
           candidate.solutionLength = solver.depth;
@@ -694,6 +671,34 @@
       }
 
       return generateFallbackLevel(size, word, targetCells, startX, targetY, wallCount, maxWallLength);
+    }
+
+    function createScatteredBlocks(word, distractorTotal, grid, occupied, size, minY, startX) {
+      const blocks = [];
+      const correct = shuffle(word.syllables.map((text, i) => ({ id: "c" + i, text, correct: true, targetIndex: i })));
+      const targetColumns = new Set(word.syllables.map((_, i) => startX + i));
+      const distractors = shuffle(word.distractors).slice(0, distractorTotal).map((text, i) => ({
+        id: "d" + i,
+        text,
+        correct: false
+      }));
+
+      for (const block of correct) {
+        const pos = findColumnFreeCell(grid, occupied, size, minY + 1, startX + block.targetIndex);
+        if (pos === null) return null;
+        delete block.targetIndex;
+        blocks.push({ ...block, pos });
+        occupied.add(String(pos));
+      }
+
+      for (const block of distractors) {
+        const pos = findFreeCell(grid, occupied, size, minY, targetColumns);
+        if (pos === null) return null;
+        blocks.push({ ...block, pos });
+        occupied.add(String(pos));
+      }
+
+      return shuffle(blocks);
     }
 
     function normalizeBoardSize() {
@@ -732,16 +737,43 @@
       return next;
     }
 
-    function findFreeCell(grid, occupied, size, minY) {
+    function findFreeCell(grid, occupied, size, minY, forbiddenColumns = new Set()) {
       const cells = [];
       const startY = Math.max(2, minY);
       for (let y = startY; y <= size - 3; y++) {
         for (let x = 2; x <= size - 3; x++) {
+          if (forbiddenColumns.has(x)) continue;
           const pos = idx(x, y, size);
           if (grid[y][x] === TILE.FLOOR && !occupied.has(String(pos))) cells.push(pos);
         }
       }
       return cells.length ? sample(cells) : null;
+    }
+
+    function findColumnFreeCell(grid, occupied, size, minY, column) {
+      const cells = [];
+      const startY = Math.max(3, minY);
+      for (let y = startY; y <= size - 3; y++) {
+        const pos = idx(column, y, size);
+        if (grid[y]?.[column] === TILE.FLOOR && !occupied.has(String(pos))) cells.push(pos);
+      }
+      return cells.length ? sample(cells) : null;
+    }
+
+    function findPreferredFreeCell(grid, occupied, size, minY, preferredX) {
+      const cells = [];
+      const startY = Math.max(2, minY);
+      for (let y = startY; y <= size - 3; y++) {
+        for (let x = 2; x <= size - 3; x++) {
+          const pos = idx(x, y, size);
+          if (grid[y][x] !== TILE.FLOOR || occupied.has(String(pos))) continue;
+          const distance = Math.abs(x - preferredX);
+          if (distance <= 2) cells.push({ pos, distance });
+        }
+      }
+      if (!cells.length) return findFreeCell(grid, occupied, size, minY);
+      const near = cells.filter((cell) => cell.distance <= 1);
+      return sample(near.length ? near : cells).pos;
     }
 
     function generateFallbackLevel(size, word, targetCells, startX, targetY, wallCount, maxWallLength) {
@@ -751,77 +783,159 @@
           if (x === 0 || y === 0 || x === size - 1 || y === size - 1) grid[y][x] = TILE.WALL;
         }
       }
-      const blocks = word.syllables.map((text, i) => ({
-        id: "c" + i,
-        text,
-        correct: true,
-        pos: idx(startX + i, targetY + 1, size)
-      }));
-      const occupied = new Set(blocks.map((block) => String(block.pos)));
-      occupied.add(String(idx(Math.floor(size / 2), targetY + 3, size)));
+
+      for (let attempt = 0; attempt < GENERATION_ATTEMPTS; attempt++) {
+        const occupied = new Set(targetCells.map((cell) => "t" + cell));
+        const player = idx(Math.floor(size / 2), targetY + 3, size);
+        occupied.add(String(player));
+        const blocks = createScatteredBlocks(word, distractorCount(word.syllables.length, size), grid, occupied, size, targetY + 2, startX);
+        if (!blocks) continue;
+        const fallback = {
+          size,
+          grid,
+          word,
+          targetCells,
+          targetY,
+          startX,
+          blocks,
+          player,
+          wallCount,
+          maxWallLength
+        };
+        const solver = verifyConstructedSolution(fallback);
+        if (solver.solved) {
+          fallback.solverStates = solver.states;
+          fallback.solutionLength = solver.depth;
+          return fallback;
+        }
+      }
+
+      return generateSimpleFallbackLevel(size, word, targetCells, startX, targetY, wallCount, maxWallLength);
+    }
+
+    function generateSimpleFallbackLevel(size, word, targetCells, startX, targetY, wallCount, maxWallLength) {
+      const grid = Array.from({ length: size }, () => Array(size).fill(TILE.FLOOR));
+      for (let y = 0; y < size; y++) {
+        for (let x = 0; x < size; x++) {
+          if (x === 0 || y === 0 || x === size - 1 || y === size - 1) grid[y][x] = TILE.WALL;
+        }
+      }
+      const occupied = new Set(targetCells.map((cell) => "t" + cell));
+      const player = idx(Math.floor(size / 2), targetY + 3, size);
+      occupied.add(String(player));
+      const blocks = [];
+      word.syllables.forEach((text, i) => {
+        let pos = findColumnFreeCell(grid, occupied, size, targetY + 3, startX + i);
+        if (pos === null) pos = findFreeCell(grid, occupied, size, targetY + 2);
+        if (pos === null) return;
+        blocks.push({ id: "c" + i, text, correct: true, pos });
+        occupied.add(String(pos));
+      });
       shuffle(word.distractors).slice(0, distractorCount(word.syllables.length, size)).forEach((text, i) => {
-        const pos = findFreeCell(grid, occupied, size, targetY + 4);
+        const pos = findFreeCell(grid, occupied, size, targetY + 2);
         if (pos !== null) {
           blocks.push({ id: "d" + i, text, correct: false, pos });
           occupied.add(String(pos));
         }
       });
-      const fallback = {
-        size,
-        grid,
-        word,
-        targetCells,
-        targetY,
-        startX,
-        blocks,
-        player: idx(Math.floor(size / 2), targetY + 3, size),
-        wallCount,
-        maxWallLength
-      };
-      const solver = solveLevel(fallback, 70000);
+      const fallback = { size, grid, word, targetCells, targetY, startX, blocks, player, wallCount, maxWallLength };
+      const solver = verifyConstructedSolution(fallback);
       fallback.solverStates = solver.states;
       fallback.solutionLength = solver.depth;
       return fallback;
     }
 
+    function verifyConstructedSolution(candidate) {
+      const allBlocks = mapBlocks(candidate.blocks.map((block) => block.pos));
+      const staticBlocks = new Set(candidate.blocks.map((block) => block.pos));
+      const reachable = reachablePlayerCells(candidate, candidate.player, allBlocks, new Set());
+      let checks = 0;
+
+      for (let i = 0; i < candidate.word.syllables.length; i++) {
+        const block = candidate.blocks.find((item) => item.id === "c" + i);
+        if (!block) return { solved: false, states: checks, depth: 0 };
+        const pos = posFromIdx(block.pos, candidate.size);
+        const target = posFromIdx(candidate.targetCells[i], candidate.size);
+        checks++;
+        if (pos.x !== target.x || pos.y <= candidate.targetY + 1) return { solved: false, states: checks, depth: 0 };
+        for (let y = candidate.targetY; y < pos.y; y++) {
+          if (!isFloor(candidate, pos.x, y)) return { solved: false, states: checks, depth: 0 };
+          const lanePos = idx(pos.x, y, candidate.size);
+          if (lanePos !== candidate.targetCells[i] && staticBlocks.has(lanePos)) return { solved: false, states: checks, depth: 0 };
+        }
+        const stand = idx(pos.x, pos.y + 1, candidate.size);
+        if (!isFloor(candidate, pos.x, pos.y + 1) || !reachable.has(stand)) return { solved: false, states: checks, depth: 0 };
+      }
+
+      return { solved: true, states: checks, depth: candidate.word.syllables.length };
+    }
+
     function solveLevel(candidate, limit) {
-      const startPositions = candidate.blocks.map((block) => block.pos);
+      const movingBlocks = candidate.blocks.filter((block) => block.correct);
+      const staticBlocks = new Set(candidate.blocks.filter((block) => !block.correct).map((block) => block.pos));
+      const startPositions = movingBlocks.map((block) => block.pos);
       const startKey = encodeState(candidate.player, startPositions);
       const queue = [{ player: candidate.player, positions: startPositions, depth: 0 }];
       const seen = new Set([startKey]);
 
       for (let head = 0; head < queue.length && seen.size <= limit; head++) {
         const current = queue[head];
-        if (isGoal(candidate, current.positions)) {
+        if (isSolverGoal(candidate, movingBlocks, current.positions)) {
           return { solved: true, states: seen.size, depth: current.depth };
         }
 
         const blockAt = mapBlocks(current.positions);
-        const playerPos = posFromIdx(current.player, candidate.size);
-        for (const dir of DIRS) {
-          const nx = playerPos.x + dir.x;
-          const ny = playerPos.y + dir.y;
-          if (!isFloor(candidate, nx, ny)) continue;
-          const nextPlayer = idx(nx, ny, candidate.size);
-          const blockIndex = blockAt.get(nextPlayer);
+        const reachable = reachablePlayerCells(candidate, current.player, blockAt, staticBlocks);
 
-          if (blockIndex === undefined) {
-            addSearchState(queue, seen, nextPlayer, current.positions, current.depth + 1, limit);
-            continue;
-          }
-
-          const bx = nx + dir.x;
-          const by = ny + dir.y;
+        for (let blockIndex = 0; blockIndex < current.positions.length; blockIndex++) {
+          const blockPos = posFromIdx(current.positions[blockIndex], candidate.size);
+          for (const dir of DIRS) {
+          const standX = blockPos.x - dir.x;
+          const standY = blockPos.y - dir.y;
+          const bx = blockPos.x + dir.x;
+          const by = blockPos.y + dir.y;
+          const standPos = idx(standX, standY, candidate.size);
           if (!isFloor(candidate, bx, by)) continue;
           const pushedPos = idx(bx, by, candidate.size);
-          if (blockAt.has(pushedPos)) continue;
+          if (!reachable.has(standPos)) continue;
+          if (blockAt.has(pushedPos) || staticBlocks.has(pushedPos)) continue;
           const nextPositions = current.positions.slice();
           nextPositions[blockIndex] = pushedPos;
-          addSearchState(queue, seen, nextPlayer, nextPositions, current.depth + 1, limit);
+          addSearchState(queue, seen, current.positions[blockIndex], nextPositions, current.depth + 1, limit);
+          }
         }
       }
 
       return { solved: false, states: seen.size, depth: 0 };
+    }
+
+    function reachablePlayerCells(candidate, start, movingBlocks, staticBlocks) {
+      const seen = new Set([start]);
+      const queue = [start];
+      for (let head = 0; head < queue.length; head++) {
+        const current = posFromIdx(queue[head], candidate.size);
+        for (const dir of DIRS) {
+          const nx = current.x + dir.x;
+          const ny = current.y + dir.y;
+          if (!isFloor(candidate, nx, ny)) continue;
+          const next = idx(nx, ny, candidate.size);
+          if (seen.has(next) || movingBlocks.has(next) || staticBlocks.has(next)) continue;
+          seen.add(next);
+          queue.push(next);
+        }
+      }
+      return seen;
+    }
+
+    function isSolverGoal(candidate, movingBlocks, positions) {
+      for (let i = 0; i < candidate.targetCells.length; i++) {
+        const target = candidate.targetCells[i];
+        const blockIndex = positions.indexOf(target);
+        if (blockIndex === -1) return false;
+        const block = movingBlocks[blockIndex];
+        if (!block || block.text !== candidate.word.syllables[i]) return false;
+      }
+      return true;
     }
 
     function addSearchState(queue, seen, player, positions, depth, limit) {
@@ -879,14 +993,10 @@
     }
 
     function updateMeta() {
-      wordMeta.textContent = level && won ? level.word.word : "Heard only";
-      moveMeta.textContent = String(moves);
-      solverMeta.textContent = level ? String(level.solverStates) : "0";
     }
 
     function speakWord() {
       if (!level || !("speechSynthesis" in window)) {
-        wordMeta.textContent = level ? level.word.word : "Unavailable";
         return;
       }
       window.speechSynthesis.cancel();
@@ -939,9 +1049,10 @@
 
       for (let y = 0; y < size; y++) {
         for (let x = 0; x < size; x++) {
-          ctx.fillStyle = level.grid[y][x] === TILE.WALL ? "#2f3947" : "#edf1f6";
+          const floorColor = (x + y) % 5 === 0 ? FLOOR_PALETTE.soft : (x + y) % 3 === 0 ? FLOOR_PALETTE.accent : FLOOR_PALETTE.base;
+          ctx.fillStyle = level.grid[y][x] === TILE.WALL ? "#2f3947" : floorColor;
           ctx.fillRect(x * tile, y * tile, tile, tile);
-          ctx.strokeStyle = "#d7dde7";
+          ctx.strokeStyle = level.grid[y][x] === TILE.WALL ? "#25303d" : FLOOR_PALETTE.grid;
           ctx.lineWidth = 1;
           ctx.strokeRect(x * tile, y * tile, tile, tile);
         }
@@ -971,7 +1082,7 @@
           ctx.lineWidth = 2;
           ctx.stroke();
         }
-        drawText(block.text, pos.x, pos.y, tile, "#243141", block.text.length > 3 ? .25 : .32, 900);
+        drawText(block.text, pos.x, pos.y, tile, "#243141", block.text.length > 3 ? .22 : .29, 900, -0.06, .64);
       });
 
       const player = posFromIdx(state.player, size);
@@ -1005,12 +1116,12 @@
       ctx.closePath();
     }
 
-    function drawText(text, gridX, gridY, tile, color, ratio, weight) {
+    function drawText(text, gridX, gridY, tile, color, ratio, weight, offsetY = 0, maxWidthRatio = .9) {
       ctx.fillStyle = color;
       ctx.textAlign = "center";
       ctx.textBaseline = "middle";
       ctx.font = weight + " " + Math.max(11, Math.floor(tile * ratio)) + "px system-ui, sans-serif";
-      ctx.fillText(text, gridX * tile + tile / 2, gridY * tile + tile / 2, tile - 8);
+      ctx.fillText(text, gridX * tile + tile / 2, gridY * tile + tile / 2 + tile * offsetY, tile * maxWidthRatio);
     }
 
     window.addEventListener("keydown", (event) => {
