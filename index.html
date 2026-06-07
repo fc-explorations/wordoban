@@ -486,8 +486,8 @@
             <label for="wallCountSelect">Wall segments (total)</label>
             <span class="control-value" id="wallCountValue">8 walls</span>
           </div>
-          <input id="wallCountSelect" type="range" min="0" max="20" step="4" value="8">
-          <div class="range-labels" aria-hidden="true"><span>0</span><span>8</span><span>20</span></div>
+          <input id="wallCountSelect" type="range" min="1" max="20" step="1" value="8">
+          <div class="range-labels" aria-hidden="true"><span>1</span><span>10</span><span>20</span></div>
         </div>
 
         <div class="control-group">
@@ -726,7 +726,7 @@
       return Math.min(max + sizeBonus, min + randInt(max - min + 1) + sizeBonus);
     }
 
-    function createGrid(size, reserved, wallCount, minWallLength, maxWallLength) {
+    function createBorderGrid(size) {
       const grid = Array.from({ length: size }, () => Array(size).fill(TILE.FLOOR));
       for (let y = 0; y < size; y++) {
         for (let x = 0; x < size; x++) {
@@ -735,7 +735,11 @@
           }
         }
       }
+      return grid;
+    }
 
+    function createGrid(size, reserved, wallCount, minWallLength, maxWallLength) {
+      const grid = createBorderGrid(size);
       let placed = 0;
       let attempts = 0;
       const attemptLimit = Math.max(80, wallCount * 30);
@@ -774,6 +778,33 @@
         }
       }
       return grid;
+    }
+
+    function createSingleWallGrid(size, reserved) {
+      const grid = createBorderGrid(size);
+      const cells = [];
+      for (let y = 3; y <= size - 3; y++) {
+        for (let x = 2; x <= size - 3; x++) {
+          if (!reserved.has(cellKey(x, y))) cells.push({ x, y });
+        }
+      }
+      shuffle(cells).some((cell) => {
+        grid[cell.y][cell.x] = TILE.WALL;
+        if (floorIsConnected(grid)) return true;
+        grid[cell.y][cell.x] = TILE.FLOOR;
+        return false;
+      });
+      return grid;
+    }
+
+    function countInteriorWalls(grid) {
+      let count = 0;
+      for (let y = 1; y < grid.length - 1; y++) {
+        for (let x = 1; x < grid.length - 1; x++) {
+          if (grid[y][x] === TILE.WALL) count++;
+        }
+      }
+      return count;
     }
 
     function wallWouldTouch(grid, x, y) {
@@ -818,7 +849,7 @@
 
     function generateLevel(forcedWord = null) {
       const size = normalizeBoardSize();
-      const wallCount = Number(wallCountSelect.value);
+      const wallCount = normalizeWallCount();
       const minWallLength = normalizeWallLengths().min;
       const maxWallLength = Number(wallLengthSelect.value);
       const dragMoves = normalizeDragMoves();
@@ -836,44 +867,48 @@
       }
       reserved.add(cellKey(Math.floor(size / 2), size - 2));
 
-      for (let attempt = 0; attempt < GENERATION_ATTEMPTS; attempt++) {
-        const grid = createGrid(size, reserved, wallCount, minWallLength, maxWallLength);
-        const occupied = new Set(targetCells.map((cell) => String(cell)));
+      for (let effectiveWallCount = wallCount; effectiveWallCount >= 1; effectiveWallCount--) {
+        for (let attempt = 0; attempt < GENERATION_ATTEMPTS; attempt++) {
+          const grid = createGrid(size, reserved, effectiveWallCount, minWallLength, maxWallLength);
+          if (countInteriorWalls(grid) < 1) continue;
+          const occupied = new Set(targetCells.map((cell) => String(cell)));
 
-        const count = distractorCount(syllables.length, size);
-        const distractors = createDistractorBlocks(word, count, grid, occupied, size, targetY + 2);
-        if (!distractors) continue;
-        const blocks = createDraggedSolutionBlocks(word, grid, occupied, size, targetCells, dragMoves.min, dragMoves.max);
-        if (!blocks) continue;
+          const count = distractorCount(syllables.length, size);
+          const distractors = createDistractorBlocks(word, count, grid, occupied, size, targetY + 2);
+          if (!distractors) continue;
+          const blocks = createDraggedSolutionBlocks(word, grid, occupied, size, targetCells, dragMoves.min, dragMoves.max);
+          if (!blocks) continue;
 
-        const player = findFreeCell(grid, occupied, size, targetY + 2);
-        if (player === null) continue;
-        occupied.add(String(player));
+          const player = findFreeCell(grid, occupied, size, targetY + 2);
+          if (player === null) continue;
+          occupied.add(String(player));
 
-        const candidate = {
-          size,
-          grid,
-          word,
-          targetCells,
-          targetY,
-          startX,
-          blocks: shuffle(blocks.concat(distractors)),
-          player,
-          wallCount,
-          minWallLength,
-          maxWallLength,
-          minSolutionMoves: dragMoves.min,
-          maxSolutionMoves: dragMoves.max
-        };
-        const solver = verifyDraggedConstruction(candidate);
-        if (solver.solved) {
-          candidate.solverStates = solver.states;
-          candidate.solutionLength = solver.depth;
-          return candidate;
+          const candidate = {
+            size,
+            grid,
+            word,
+            targetCells,
+            targetY,
+            startX,
+            blocks: shuffle(blocks.concat(distractors)),
+            player,
+            wallCount: effectiveWallCount,
+            requestedWallCount: wallCount,
+            minWallLength,
+            maxWallLength,
+            minSolutionMoves: dragMoves.min,
+            maxSolutionMoves: dragMoves.max
+          };
+          const solver = verifyDraggedConstruction(candidate);
+          if (solver.solved) {
+            candidate.solverStates = solver.states;
+            candidate.solutionLength = solver.depth;
+            return candidate;
+          }
         }
       }
 
-      return generateFallbackLevel(size, word, targetCells, startX, targetY, wallCount, minWallLength, maxWallLength, dragMoves.min, dragMoves.max);
+      return generateFallbackLevel(size, word, targetCells, startX, targetY, wallCount, minWallLength, maxWallLength, dragMoves.min, dragMoves.max, reserved);
     }
 
     function createDistractorBlocks(word, distractorTotal, grid, occupied, size, minY) {
@@ -993,6 +1028,12 @@
       return size;
     }
 
+    function normalizeWallCount() {
+      const count = Math.max(1, Math.min(20, Math.round(Number(wallCountSelect.value) || DEFAULT_SETTINGS.wallCount)));
+      wallCountSelect.value = String(count);
+      return count;
+    }
+
     function normalizeWallLengths() {
       const min = Math.max(1, Math.min(6, Math.round(Number(wallMinLengthSelect.value) || 1)));
       let max = Math.max(1, Math.min(6, Math.round(Number(wallLengthSelect.value) || 3)));
@@ -1014,7 +1055,7 @@
     function updateSettingLabels() {
       const length = Number(lengthSelect.value);
       const size = normalizeBoardSize();
-      const wallCount = Number(wallCountSelect.value);
+      const wallCount = normalizeWallCount();
       const wallLengths = normalizeWallLengths();
       const dragMoves = normalizeDragMoves();
 
@@ -1033,7 +1074,7 @@
       return {
         length: Number(lengthSelect.value),
         size: normalizeBoardSize(),
-        wallCount: Number(wallCountSelect.value),
+        wallCount: normalizeWallCount(),
         minWallLength: wallLengths.min,
         maxWallLength: wallLengths.max,
         minSolutionMoves: dragMoves.min,
@@ -1140,58 +1181,52 @@
       return sample(near.length ? near : cells).pos;
     }
 
-    function generateFallbackLevel(size, word, targetCells, startX, targetY, wallCount, minWallLength, maxWallLength, minMoves, maxMoves) {
-      const grid = Array.from({ length: size }, () => Array(size).fill(TILE.FLOOR));
-      for (let y = 0; y < size; y++) {
-        for (let x = 0; x < size; x++) {
-          if (x === 0 || y === 0 || x === size - 1 || y === size - 1) grid[y][x] = TILE.WALL;
+    function generateFallbackLevel(size, word, targetCells, startX, targetY, wallCount, minWallLength, maxWallLength, minMoves, maxMoves, reserved) {
+      for (let effectiveWallCount = wallCount; effectiveWallCount >= 1; effectiveWallCount--) {
+        for (let attempt = 0; attempt < GENERATION_ATTEMPTS; attempt++) {
+          let grid = createGrid(size, reserved, effectiveWallCount, minWallLength, maxWallLength);
+          if (countInteriorWalls(grid) < 1) grid = createSingleWallGrid(size, reserved);
+          if (countInteriorWalls(grid) < 1) continue;
+          const occupied = new Set(targetCells.map((cell) => String(cell)));
+          const distractors = createDistractorBlocks(word, distractorCount(word.syllables.length, size), grid, occupied, size, targetY + 2);
+          if (!distractors) continue;
+          const blocks = createDraggedSolutionBlocks(word, grid, occupied, size, targetCells, minMoves, maxMoves);
+          if (!blocks) continue;
+          const player = findFreeCell(grid, occupied, size, targetY + 2);
+          if (player === null) continue;
+          occupied.add(String(player));
+          const fallback = {
+            size,
+            grid,
+            word,
+            targetCells,
+            targetY,
+            startX,
+            blocks: shuffle(blocks.concat(distractors)),
+            player,
+            wallCount: effectiveWallCount,
+            requestedWallCount: wallCount,
+            minWallLength,
+            maxWallLength,
+            minSolutionMoves: minMoves,
+            maxSolutionMoves: maxMoves
+          };
+          const solver = verifyDraggedConstruction(fallback);
+          if (solver.solved) {
+            fallback.solverStates = solver.states;
+            fallback.solutionLength = solver.depth;
+            return fallback;
+          }
         }
       }
 
-      for (let attempt = 0; attempt < GENERATION_ATTEMPTS; attempt++) {
-        const occupied = new Set(targetCells.map((cell) => String(cell)));
-        const distractors = createDistractorBlocks(word, distractorCount(word.syllables.length, size), grid, occupied, size, targetY + 2);
-        if (!distractors) continue;
-        const blocks = createDraggedSolutionBlocks(word, grid, occupied, size, targetCells, minMoves, maxMoves);
-        if (!blocks) continue;
-        const player = findFreeCell(grid, occupied, size, targetY + 2);
-        if (player === null) continue;
-        occupied.add(String(player));
-        const fallback = {
-          size,
-          grid,
-          word,
-          targetCells,
-          targetY,
-          startX,
-          blocks: shuffle(blocks.concat(distractors)),
-          player,
-          wallCount,
-          minWallLength,
-          maxWallLength,
-          minSolutionMoves: minMoves,
-          maxSolutionMoves: maxMoves
-        };
-        const solver = verifyDraggedConstruction(fallback);
-        if (solver.solved) {
-          fallback.solverStates = solver.states;
-          fallback.solutionLength = solver.depth;
-          return fallback;
-        }
-      }
-
-      return generateSimpleFallbackLevel(size, word, targetCells, startX, targetY, wallCount, minWallLength, maxWallLength, minMoves, maxMoves);
+      return generateSimpleFallbackLevel(size, word, targetCells, startX, targetY, wallCount, minWallLength, maxWallLength, minMoves, maxMoves, reserved);
     }
 
-    function generateSimpleFallbackLevel(size, word, targetCells, startX, targetY, wallCount, minWallLength, maxWallLength, minMoves, maxMoves) {
-      const grid = Array.from({ length: size }, () => Array(size).fill(TILE.FLOOR));
-      for (let y = 0; y < size; y++) {
-        for (let x = 0; x < size; x++) {
-          if (x === 0 || y === 0 || x === size - 1 || y === size - 1) grid[y][x] = TILE.WALL;
-        }
-      }
-
+    function generateSimpleFallbackLevel(size, word, targetCells, startX, targetY, wallCount, minWallLength, maxWallLength, minMoves, maxMoves, reserved) {
       for (let attempt = 0; attempt < 40; attempt++) {
+        const grid = createSingleWallGrid(size, reserved);
+        if (countInteriorWalls(grid) < 1) continue;
         const occupied = new Set(targetCells.map((cell) => String(cell)));
         const distractors = createDistractorBlocks(word, distractorCount(word.syllables.length, size), grid, occupied, size, targetY + 2);
         if (!distractors) continue;
@@ -1208,7 +1243,8 @@
           startX,
           blocks: shuffle(blocks.concat(distractors)),
           player,
-          wallCount,
+          wallCount: 1,
+          requestedWallCount: wallCount,
           minWallLength,
           maxWallLength,
           minSolutionMoves: minMoves,
