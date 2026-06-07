@@ -337,7 +337,7 @@
           <label for="sizeSelect">Board size</label>
           <span class="control-value" id="sizeValue">12 x 12</span>
         </div>
-        <input id="sizeSelect" type="range" min="8" max="20" step="1" value="12">
+        <input id="sizeSelect" type="range" min="12" max="20" step="1" value="12">
       </div>
 
       <div class="control-group">
@@ -715,7 +715,7 @@
 
     function normalizeBoardSize() {
       const raw = Number(sizeSelect.value);
-      const size = Math.max(8, Math.min(20, Math.round(Number.isFinite(raw) ? raw : 12)));
+      const size = Math.max(12, Math.min(20, Math.round(Number.isFinite(raw) ? raw : 12)));
       sizeSelect.value = String(size);
       return size;
     }
