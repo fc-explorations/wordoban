@@ -535,8 +535,9 @@
 
     function findFreeCell(grid, occupied, size, minY) {
       const cells = [];
-      for (let y = minY; y < size - 1; y++) {
-        for (let x = 1; x < size - 1; x++) {
+      const startY = Math.max(2, minY);
+      for (let y = startY; y <= size - 3; y++) {
+        for (let x = 2; x <= size - 3; x++) {
           const pos = idx(x, y, size);
           if (grid[y][x] === TILE.FLOOR && !occupied.has(String(pos))) cells.push(pos);
         }
