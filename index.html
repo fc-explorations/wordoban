@@ -614,15 +614,7 @@
     const sprites = {
       block: loadSprite("assets/block.png"),
       player: loadSprite("assets/player.png"),
-      walls: {
-        isolated: loadSprite("assets/walls/isolated.png"),
-        horizontal: loadSprite("assets/walls/horizontal.png"),
-        vertical: loadSprite("assets/walls/vertical.png"),
-        endNorth: loadSprite("assets/walls/end-north.png"),
-        endSouth: loadSprite("assets/walls/end-south.png"),
-        endWest: loadSprite("assets/walls/end-west.png"),
-        endEast: loadSprite("assets/walls/end-east.png")
-      }
+      wall: loadSprite("assets/walls/isolated.png")
     };
 
     function loadSprite(src) {
@@ -1546,12 +1538,11 @@
     }
 
     function drawWallTile(gridX, gridY, tile) {
-      const sprite = wallSpriteFor(gridX, gridY);
       const x = gridX * tile;
       const y = gridY * tile;
-      if (sprite?.ready) {
-        const overlap = tile * .035;
-        ctx.drawImage(sprite.image, x - overlap, y - overlap, tile + overlap * 2, tile + overlap * 2);
+      if (sprites.wall.ready) {
+        const overlap = tile * .055;
+        ctx.drawImage(sprites.wall.image, x - overlap, y - overlap, tile + overlap * 2, tile + overlap * 2);
         return;
       }
       ctx.fillStyle = "#2f3947";
@@ -1560,20 +1551,6 @@
       ctx.strokeStyle = "#25303d";
       ctx.lineWidth = 2;
       ctx.stroke();
-    }
-
-    function wallSpriteFor(x, y) {
-      const north = level.grid[y - 1]?.[x] === TILE.WALL;
-      const south = level.grid[y + 1]?.[x] === TILE.WALL;
-      const west = level.grid[y]?.[x - 1] === TILE.WALL;
-      const east = level.grid[y]?.[x + 1] === TILE.WALL;
-      if (west && east) return sprites.walls.horizontal;
-      if (north && south) return sprites.walls.vertical;
-      if (south) return sprites.walls.endNorth;
-      if (north) return sprites.walls.endSouth;
-      if (east) return sprites.walls.endWest;
-      if (west) return sprites.walls.endEast;
-      return sprites.walls.isolated;
     }
 
     function roundRect(x, y, width, height, radius) {
