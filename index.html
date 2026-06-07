@@ -432,7 +432,16 @@
     let feedback = null;
     const sprites = {
       block: loadSprite("assets/block.png"),
-      player: loadSprite("assets/player.png")
+      player: loadSprite("assets/player.png"),
+      walls: {
+        isolated: loadSprite("assets/walls/isolated.png"),
+        horizontal: loadSprite("assets/walls/horizontal.png"),
+        vertical: loadSprite("assets/walls/vertical.png"),
+        endNorth: loadSprite("assets/walls/end-north.png"),
+        endSouth: loadSprite("assets/walls/end-south.png"),
+        endWest: loadSprite("assets/walls/end-west.png"),
+        endEast: loadSprite("assets/walls/end-east.png")
+      }
     };
 
     function loadSprite(src) {
@@ -1006,6 +1015,8 @@
       if (correct) {
         won = true;
         startFeedback("correct");
+        playFanfare();
+        setTimeout(() => loadNewLevel(), 2000);
       } else {
         startFeedback("wrong", () => loadNewLevel(level.word));
       }
@@ -1046,6 +1057,32 @@
       utterance.rate = 0.82;
       utterance.pitch = 1;
       window.speechSynthesis.speak(utterance);
+    }
+
+    function playFanfare() {
+      const AudioContext = window.AudioContext || window.webkitAudioContext;
+      if (!AudioContext) return;
+      const audio = new AudioContext();
+      const notes = [
+        { pitch: 523.25, start: 0, length: .12 },
+        { pitch: 659.25, start: .11, length: .12 },
+        { pitch: 783.99, start: .22, length: .18 },
+        { pitch: 1046.5, start: .4, length: .32 }
+      ];
+      notes.forEach((note) => {
+        const oscillator = audio.createOscillator();
+        const gain = audio.createGain();
+        oscillator.type = "triangle";
+        oscillator.frequency.setValueAtTime(note.pitch, audio.currentTime + note.start);
+        gain.gain.setValueAtTime(0.0001, audio.currentTime + note.start);
+        gain.gain.exponentialRampToValueAtTime(0.16, audio.currentTime + note.start + .02);
+        gain.gain.exponentialRampToValueAtTime(0.0001, audio.currentTime + note.start + note.length);
+        oscillator.connect(gain);
+        gain.connect(audio.destination);
+        oscillator.start(audio.currentTime + note.start);
+        oscillator.stop(audio.currentTime + note.start + note.length + .03);
+      });
+      setTimeout(() => audio.close(), 900);
     }
 
     function movePlayer(dx, dy) {
@@ -1121,11 +1158,14 @@
       for (let y = 0; y < size; y++) {
         for (let x = 0; x < size; x++) {
           const floorColor = (x + y) % 5 === 0 ? FLOOR_PALETTE.soft : (x + y) % 3 === 0 ? FLOOR_PALETTE.accent : FLOOR_PALETTE.base;
-          ctx.fillStyle = level.grid[y][x] === TILE.WALL ? "#2f3947" : floorColor;
+          ctx.fillStyle = floorColor;
           ctx.fillRect(x * tile, y * tile, tile, tile);
-          ctx.strokeStyle = level.grid[y][x] === TILE.WALL ? "#25303d" : FLOOR_PALETTE.grid;
+          ctx.strokeStyle = FLOOR_PALETTE.grid;
           ctx.lineWidth = 1;
           ctx.strokeRect(x * tile, y * tile, tile, tile);
+          if (level.grid[y][x] === TILE.WALL) {
+            drawWallTile(x, y, tile);
+          }
         }
       }
 
@@ -1200,6 +1240,36 @@
       ctx.fillStyle = "rgb(" + color + ")";
       ctx.fill();
       ctx.restore();
+    }
+
+    function drawWallTile(gridX, gridY, tile) {
+      const sprite = wallSpriteFor(gridX, gridY);
+      const x = gridX * tile;
+      const y = gridY * tile;
+      if (sprite?.ready) {
+        ctx.drawImage(sprite.image, x + tile * .04, y + tile * .04, tile * .92, tile * .92);
+        return;
+      }
+      ctx.fillStyle = "#2f3947";
+      roundRect(x + 3, y + 3, tile - 6, tile - 6, Math.min(6, tile * .12));
+      ctx.fill();
+      ctx.strokeStyle = "#25303d";
+      ctx.lineWidth = 2;
+      ctx.stroke();
+    }
+
+    function wallSpriteFor(x, y) {
+      const north = level.grid[y - 1]?.[x] === TILE.WALL;
+      const south = level.grid[y + 1]?.[x] === TILE.WALL;
+      const west = level.grid[y]?.[x - 1] === TILE.WALL;
+      const east = level.grid[y]?.[x + 1] === TILE.WALL;
+      if (west && east) return sprites.walls.horizontal;
+      if (north && south) return sprites.walls.vertical;
+      if (south) return sprites.walls.endNorth;
+      if (north) return sprites.walls.endSouth;
+      if (east) return sprites.walls.endWest;
+      if (west) return sprites.walls.endEast;
+      return sprites.walls.isolated;
     }
 
     function roundRect(x, y, width, height, radius) {
