@@ -687,6 +687,7 @@
     let wordCycles = {};
     let feedback = null;
     let playerAnimation = null;
+    let playerFacing = 0;
     let boardPointerStart = null;
     const sprites = {
       block: loadSprite("assets/block.png"),
@@ -1667,6 +1668,7 @@
       undoStack = [];
       feedback = null;
       playerAnimation = null;
+      playerFacing = 0;
       updateMeta();
       draw();
     }
@@ -1744,6 +1746,7 @@
       const blockIndex = state.blocks.findIndex((block) => block.pos === next);
       if (blockIndex === -1) {
         pushUndoState();
+        playerFacing = facingForDirection(dx, dy);
         startPlayerAnimation(state.player, next);
         state.player = next;
         moves++;
@@ -1753,6 +1756,7 @@
         const pushed = idx(bx, by, level.size);
         if (!isFloor(level, bx, by) || state.blocks.some((block) => block.pos === pushed)) return;
         pushUndoState();
+        playerFacing = facingForDirection(dx, dy);
         startPlayerAnimation(state.player, next);
         state.blocks[blockIndex].pos = pushed;
         state.player = next;
@@ -1791,7 +1795,8 @@
         player: state.player,
         blocks: state.blocks.map((block) => ({ ...block })),
         moves,
-        won
+        won,
+        playerFacing
       };
     }
 
@@ -1809,6 +1814,7 @@
       };
       moves = previous.moves;
       won = previous.won;
+      playerFacing = previous.playerFacing || 0;
       updateMeta();
       draw();
     }
@@ -1846,6 +1852,13 @@
 
     function easeMove(progress) {
       return 1 - Math.pow(1 - progress, 3);
+    }
+
+    function facingForDirection(dx, dy) {
+      if (dx > 0) return -Math.PI / 2;
+      if (dx < 0) return Math.PI / 2;
+      if (dy < 0) return Math.PI;
+      return 0;
     }
 
     function draw() {
@@ -1905,7 +1918,7 @@
 
       const player = playerDrawPosition(size);
       if (sprites.player.ready) {
-        ctx.drawImage(sprites.player.image, player.x * tile + tile * .02, player.y * tile + tile * .02, tile * .96, tile * .96);
+        drawPlayerSprite(player, tile);
       } else {
         const cx = player.x * tile + tile / 2;
         const cy = player.y * tile + tile / 2;
@@ -1922,6 +1935,17 @@
         ctx.font = "900 " + Math.max(11, Math.floor(tile * .32)) + "px system-ui, sans-serif";
         ctx.fillText("P", cx, cy, tile * .9);
       }
+    }
+
+    function drawPlayerSprite(player, tile) {
+      const cx = player.x * tile + tile / 2;
+      const cy = player.y * tile + tile / 2;
+      const size = tile * .96;
+      ctx.save();
+      ctx.translate(cx, cy);
+      ctx.rotate(playerFacing);
+      ctx.drawImage(sprites.player.image, -size / 2, -size / 2, size, size);
+      ctx.restore();
     }
 
     function playerDrawPosition(size) {
