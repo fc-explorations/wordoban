@@ -37,13 +37,12 @@
       margin: 0 auto;
       padding: 18px;
       display: grid;
-      grid-template-columns: minmax(0, 1fr) 320px;
-      gap: 18px;
+      grid-template-columns: minmax(0, 1fr);
+      gap: 14px;
       align-items: start;
     }
 
     header {
-      grid-column: 1 / -1;
       display: flex;
       align-items: end;
       justify-content: space-between;
@@ -65,10 +64,25 @@
       font-size: 1rem;
     }
 
+    .toolbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+
+    .toolbar-actions {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+
     .board-wrap {
       display: grid;
       justify-items: center;
-      gap: 12px;
+      gap: 10px;
       min-width: 0;
     }
 
@@ -82,30 +96,46 @@
       touch-action: none;
     }
 
-    .status {
-      width: min(100%, 760px);
-      min-height: 48px;
-      border: 1px solid var(--line);
-      background: var(--panel);
-      padding: 10px 12px;
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: 12px;
-      font-size: .95rem;
-      color: var(--muted);
-    }
-
-    .status strong {
-      color: var(--ink);
-    }
-
     aside {
+      width: min(360px, calc(100% - 24px));
       border: 1px solid var(--line);
       background: var(--panel);
       padding: 14px;
       display: grid;
       gap: 16px;
+      position: fixed;
+      top: 92px;
+      right: 18px;
+      z-index: 10;
+      box-shadow: 0 18px 45px rgba(31, 41, 55, .16);
+    }
+
+    aside[hidden] {
+      display: none;
+    }
+
+    .settings-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      border-bottom: 1px solid var(--line);
+      padding-bottom: 10px;
+    }
+
+    .settings-head h2 {
+      margin: 0;
+      font-size: 1rem;
+      letter-spacing: 0;
+    }
+
+    .icon-button {
+      width: 42px;
+      min-height: 42px;
+      padding: 0;
+      display: inline-grid;
+      place-items: center;
+      font-size: 1.15rem;
     }
 
     .control-group {
@@ -123,11 +153,13 @@
     }
 
     select,
+    input,
     button {
       font: inherit;
     }
 
-    select {
+    select,
+    input {
       width: 100%;
       min-height: 42px;
       border: 1px solid #b8c1cf;
@@ -160,7 +192,8 @@
     }
 
     button:focus-visible,
-    select:focus-visible {
+    select:focus-visible,
+    input:focus-visible {
       outline: 3px solid rgba(47, 102, 179, .32);
       outline-offset: 2px;
     }
@@ -215,18 +248,14 @@
     }
 
     @media (max-width: 860px) {
-      .app {
-        grid-template-columns: 1fr;
-      }
-
       header {
         align-items: start;
         flex-direction: column;
       }
 
       aside {
-        width: min(100%, 760px);
-        justify-self: center;
+        top: 86px;
+        right: 12px;
       }
 
       canvas {
@@ -242,17 +271,40 @@
         <h1>Wordoban</h1>
         <p class="subtitle">Hear the word, choose the right syllables, push them into the target row.</p>
       </div>
-      <button class="primary" id="speakButton" type="button">Replay Word</button>
+      <div class="toolbar-actions">
+        <button class="primary" id="speakButton" type="button">Replay Word</button>
+        <button class="icon-button" id="settingsButton" type="button" aria-label="Open setup" aria-expanded="false" aria-controls="settingsPanel">⚙</button>
+      </div>
     </header>
 
-    <section class="board-wrap" aria-label="Game board">
-      <canvas id="board" width="900" height="900"></canvas>
-      <div class="status" id="status">
-        <span>Generating a solvable puzzle...</span>
+    <section class="toolbar" aria-label="Game controls">
+      <div class="toolbar-actions">
+        <button id="resetButton" type="button">Reset</button>
+        <button id="newButton" type="button">New Puzzle</button>
+      </div>
+      <div class="meta">
+        <div>Target: <span id="wordMeta">Heard only</span></div>
+        <div>Moves: <span id="moveMeta">0</span></div>
+        <div>Solver states: <span id="solverMeta">0</span></div>
       </div>
     </section>
 
-    <aside>
+    <section class="board-wrap" aria-label="Game board">
+      <canvas id="board" width="900" height="900"></canvas>
+      <div class="dpad" aria-label="Directional controls">
+        <button class="up" type="button" data-dir="0,-1" aria-label="Move up">▲</button>
+        <button class="left" type="button" data-dir="-1,0" aria-label="Move left">◀</button>
+        <button class="right" type="button" data-dir="1,0" aria-label="Move right">▶</button>
+        <button class="down" type="button" data-dir="0,1" aria-label="Move down">▼</button>
+      </div>
+    </section>
+
+    <aside id="settingsPanel" hidden>
+      <div class="settings-head">
+        <h2>Setup</h2>
+        <button class="icon-button" id="closeSettingsButton" type="button" aria-label="Close setup">×</button>
+      </div>
+
       <div class="control-group">
         <label for="lengthSelect">Word length</label>
         <select id="lengthSelect">
@@ -265,12 +317,7 @@
 
       <div class="control-group">
         <label for="sizeSelect">Board size</label>
-        <select id="sizeSelect">
-          <option value="8">8 x 8</option>
-          <option value="10">10 x 10</option>
-          <option value="12" selected>12 x 12</option>
-          <option value="14">14 x 14</option>
-        </select>
+        <input id="sizeSelect" type="number" min="8" max="20" step="1" value="12" inputmode="numeric">
       </div>
 
       <div class="control-group">
@@ -295,27 +342,6 @@
           <option value="5">5 tiles</option>
           <option value="6">6 tiles</option>
         </select>
-      </div>
-
-      <div class="button-row">
-        <button id="resetButton" type="button">Reset</button>
-        <button id="newButton" type="button">New Puzzle</button>
-      </div>
-
-      <div class="control-group">
-        <div class="group-label">Touch controls</div>
-        <div class="dpad" aria-label="Directional controls">
-          <button class="up" type="button" data-dir="0,-1" aria-label="Move up">▲</button>
-          <button class="left" type="button" data-dir="-1,0" aria-label="Move left">◀</button>
-          <button class="right" type="button" data-dir="1,0" aria-label="Move right">▶</button>
-          <button class="down" type="button" data-dir="0,1" aria-label="Move down">▼</button>
-        </div>
-      </div>
-
-      <div class="meta">
-        <div>Target: <span id="wordMeta">Heard only</span></div>
-        <div>Moves: <span id="moveMeta">0</span></div>
-        <div>Solver states: <span id="solverMeta">0</span></div>
       </div>
     </aside>
   </main>
@@ -355,12 +381,14 @@
 
     const canvas = document.getElementById("board");
     const ctx = canvas.getContext("2d");
-    const statusEl = document.getElementById("status");
     const lengthSelect = document.getElementById("lengthSelect");
     const sizeSelect = document.getElementById("sizeSelect");
     const wallCountSelect = document.getElementById("wallCountSelect");
     const wallLengthSelect = document.getElementById("wallLengthSelect");
     const speakButton = document.getElementById("speakButton");
+    const settingsButton = document.getElementById("settingsButton");
+    const settingsPanel = document.getElementById("settingsPanel");
+    const closeSettingsButton = document.getElementById("closeSettingsButton");
     const resetButton = document.getElementById("resetButton");
     const newButton = document.getElementById("newButton");
     const wordMeta = document.getElementById("wordMeta");
@@ -500,7 +528,7 @@
     }
 
     function generateLevel() {
-      const size = Number(sizeSelect.value);
+      const size = normalizeBoardSize();
       const wallCount = Number(wallCountSelect.value);
       const maxWallLength = Number(wallLengthSelect.value);
       const wordOptions = getWordsForLength(lengthSelect.value);
@@ -566,6 +594,13 @@
       }
 
       return generateFallbackLevel(size, word, targetCells, startX, targetY, wallCount, maxWallLength);
+    }
+
+    function normalizeBoardSize() {
+      const raw = Number(sizeSelect.value);
+      const size = Math.max(8, Math.min(20, Math.round(Number.isFinite(raw) ? raw : 12)));
+      sizeSelect.value = String(size);
+      return size;
     }
 
     function chooseDifferentWord(options) {
@@ -706,7 +741,6 @@
     }
 
     function loadNewLevel() {
-      statusEl.innerHTML = "<span>Generating a solvable puzzle...</span>";
       level = generateLevel();
       initialState = {
         player: level.player,
@@ -724,7 +758,6 @@
       moves = 0;
       won = false;
       updateMeta();
-      updateStatus();
       draw();
     }
 
@@ -734,19 +767,9 @@
       solverMeta.textContent = level ? String(level.solverStates) : "0";
     }
 
-    function updateStatus() {
-      if (!level) return;
-      if (won) {
-        statusEl.innerHTML = "<span><strong>Complete.</strong> The target row spells the heard word.</span><span>" + moves + " moves</span>";
-        return;
-      }
-      const slots = level.word.syllables.map(() => "_").join(" | ");
-      statusEl.innerHTML = "<span><strong>Listen, then build:</strong> " + slots + "</span><span>" + level.size + " x " + level.size + "</span>";
-    }
-
     function speakWord() {
       if (!level || !("speechSynthesis" in window)) {
-        statusEl.innerHTML = "<span><strong>Speech is unavailable.</strong> Use the displayed word for this browser.</span>";
+        wordMeta.textContent = level ? level.word.word : "Unavailable";
         return;
       }
       window.speechSynthesis.cancel();
@@ -782,7 +805,6 @@
         won = true;
       }
       updateMeta();
-      updateStatus();
       draw();
     }
 
@@ -891,10 +913,23 @@
     });
 
     speakButton.addEventListener("click", speakWord);
+    settingsButton.addEventListener("click", () => {
+      const opening = settingsPanel.hidden;
+      settingsPanel.hidden = !opening;
+      settingsButton.setAttribute("aria-expanded", String(opening));
+    });
+    closeSettingsButton.addEventListener("click", () => {
+      settingsPanel.hidden = true;
+      settingsButton.setAttribute("aria-expanded", "false");
+      settingsButton.focus();
+    });
     resetButton.addEventListener("click", resetCurrentLevel);
     newButton.addEventListener("click", loadNewLevel);
     lengthSelect.addEventListener("change", loadNewLevel);
-    sizeSelect.addEventListener("change", loadNewLevel);
+    sizeSelect.addEventListener("change", () => {
+      normalizeBoardSize();
+      loadNewLevel();
+    });
     wallCountSelect.addEventListener("change", loadNewLevel);
     wallLengthSelect.addEventListener("change", loadNewLevel);
     window.addEventListener("resize", draw);
