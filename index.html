@@ -143,6 +143,20 @@
       gap: 8px;
     }
 
+    .control-heading {
+      display: flex;
+      align-items: baseline;
+      justify-content: space-between;
+      gap: 10px;
+    }
+
+    .control-value {
+      color: var(--ink);
+      font-size: .9rem;
+      font-weight: 800;
+      white-space: nowrap;
+    }
+
     label,
     .group-label {
       font-size: .78rem;
@@ -167,6 +181,14 @@
       color: var(--ink);
       padding: 0 10px;
       border-radius: 6px;
+    }
+
+    input[type="range"] {
+      min-height: 34px;
+      padding: 0;
+      border: 0;
+      accent-color: var(--player);
+      cursor: pointer;
     }
 
     .button-row {
@@ -306,42 +328,35 @@
       </div>
 
       <div class="control-group">
-        <label for="lengthSelect">Word length</label>
-        <select id="lengthSelect">
-          <option value="1">1 syllable</option>
-          <option value="2" selected>2 syllables</option>
-          <option value="3">3 syllables</option>
-          <option value="4">4+ syllables</option>
-        </select>
+        <div class="control-heading">
+          <label for="lengthSelect">Word length</label>
+          <span class="control-value" id="lengthValue">2 syllables</span>
+        </div>
+        <input id="lengthSelect" type="range" min="1" max="4" step="1" value="2">
       </div>
 
       <div class="control-group">
-        <label for="sizeSelect">Board size</label>
-        <input id="sizeSelect" type="number" min="8" max="20" step="1" value="12" inputmode="numeric">
+        <div class="control-heading">
+          <label for="sizeSelect">Board size</label>
+          <span class="control-value" id="sizeValue">12 x 12</span>
+        </div>
+        <input id="sizeSelect" type="range" min="8" max="20" step="1" value="12">
       </div>
 
       <div class="control-group">
-        <label for="wallCountSelect">Wall segments</label>
-        <select id="wallCountSelect">
-          <option value="0">0 walls</option>
-          <option value="4">4 walls</option>
-          <option value="8" selected>8 walls</option>
-          <option value="12">12 walls</option>
-          <option value="16">16 walls</option>
-          <option value="20">20 walls</option>
-        </select>
+        <div class="control-heading">
+          <label for="wallCountSelect">Wall segments</label>
+          <span class="control-value" id="wallCountValue">8 walls</span>
+        </div>
+        <input id="wallCountSelect" type="range" min="0" max="20" step="4" value="8">
       </div>
 
       <div class="control-group">
-        <label for="wallLengthSelect">Max wall length</label>
-        <select id="wallLengthSelect">
-          <option value="1">1 tile</option>
-          <option value="2">2 tiles</option>
-          <option value="3" selected>3 tiles</option>
-          <option value="4">4 tiles</option>
-          <option value="5">5 tiles</option>
-          <option value="6">6 tiles</option>
-        </select>
+        <div class="control-heading">
+          <label for="wallLengthSelect">Max wall length</label>
+          <span class="control-value" id="wallLengthValue">3 tiles</span>
+        </div>
+        <input id="wallLengthSelect" type="range" min="1" max="6" step="1" value="3">
       </div>
     </aside>
   </main>
@@ -385,6 +400,10 @@
     const sizeSelect = document.getElementById("sizeSelect");
     const wallCountSelect = document.getElementById("wallCountSelect");
     const wallLengthSelect = document.getElementById("wallLengthSelect");
+    const lengthValue = document.getElementById("lengthValue");
+    const sizeValue = document.getElementById("sizeValue");
+    const wallCountValue = document.getElementById("wallCountValue");
+    const wallLengthValue = document.getElementById("wallLengthValue");
     const speakButton = document.getElementById("speakButton");
     const settingsButton = document.getElementById("settingsButton");
     const settingsPanel = document.getElementById("settingsPanel");
@@ -601,6 +620,23 @@
       const size = Math.max(8, Math.min(20, Math.round(Number.isFinite(raw) ? raw : 12)));
       sizeSelect.value = String(size);
       return size;
+    }
+
+    function updateSettingLabels() {
+      const length = Number(lengthSelect.value);
+      const size = normalizeBoardSize();
+      const wallCount = Number(wallCountSelect.value);
+      const wallLength = Number(wallLengthSelect.value);
+
+      lengthValue.textContent = length === 4 ? "4+ syllables" : length + " syllable" + (length === 1 ? "" : "s");
+      sizeValue.textContent = size + " x " + size;
+      wallCountValue.textContent = wallCount + " wall" + (wallCount === 1 ? "" : "s");
+      wallLengthValue.textContent = wallLength + " tile" + (wallLength === 1 ? "" : "s");
+    }
+
+    function applySettingChange() {
+      updateSettingLabels();
+      loadNewLevel();
     }
 
     function chooseDifferentWord(options) {
@@ -925,13 +961,14 @@
     });
     resetButton.addEventListener("click", resetCurrentLevel);
     newButton.addEventListener("click", loadNewLevel);
-    lengthSelect.addEventListener("change", loadNewLevel);
-    sizeSelect.addEventListener("change", () => {
-      normalizeBoardSize();
-      loadNewLevel();
-    });
-    wallCountSelect.addEventListener("change", loadNewLevel);
-    wallLengthSelect.addEventListener("change", loadNewLevel);
+    lengthSelect.addEventListener("input", updateSettingLabels);
+    sizeSelect.addEventListener("input", updateSettingLabels);
+    wallCountSelect.addEventListener("input", updateSettingLabels);
+    wallLengthSelect.addEventListener("input", updateSettingLabels);
+    lengthSelect.addEventListener("change", applySettingChange);
+    sizeSelect.addEventListener("change", applySettingChange);
+    wallCountSelect.addEventListener("change", applySettingChange);
+    wallLengthSelect.addEventListener("change", applySettingChange);
     window.addEventListener("resize", draw);
 
     window.__wordobanTest = {
@@ -942,12 +979,14 @@
         sizeSelect.value = String(size);
         if (wallCount !== undefined) wallCountSelect.value = String(wallCount);
         if (maxWallLength !== undefined) wallLengthSelect.value = String(maxWallLength);
+        updateSettingLabels();
       },
       current() {
         return { level, state, won, moves };
       }
     };
 
+    updateSettingLabels();
     loadNewLevel();
   </script>
 </body>
