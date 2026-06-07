@@ -686,6 +686,7 @@
     let won = false;
     let wordCycles = {};
     let feedback = null;
+    let playerAnimation = null;
     let boardPointerStart = null;
     const sprites = {
       block: loadSprite("assets/block.png"),
@@ -1665,6 +1666,7 @@
       won = false;
       undoStack = [];
       feedback = null;
+      playerAnimation = null;
       updateMeta();
       draw();
     }
@@ -1732,7 +1734,7 @@
     }
 
     function movePlayer(dx, dy) {
-      if (!level || won || feedback) return;
+      if (!level || won || feedback || playerAnimation) return;
       const player = posFromIdx(state.player, level.size);
       const nx = player.x + dx;
       const ny = player.y + dy;
@@ -1742,6 +1744,7 @@
       const blockIndex = state.blocks.findIndex((block) => block.pos === next);
       if (blockIndex === -1) {
         pushUndoState();
+        startPlayerAnimation(state.player, next);
         state.player = next;
         moves++;
       } else {
@@ -1750,6 +1753,7 @@
         const pushed = idx(bx, by, level.size);
         if (!isFloor(level, bx, by) || state.blocks.some((block) => block.pos === pushed)) return;
         pushUndoState();
+        startPlayerAnimation(state.player, next);
         state.blocks[blockIndex].pos = pushed;
         state.player = next;
         moves++;
@@ -1758,6 +1762,28 @@
       handleTargetCompletion();
       updateMeta();
       draw();
+    }
+
+    function startPlayerAnimation(from, to) {
+      playerAnimation = {
+        from,
+        to,
+        start: nowMs(),
+        duration: 110
+      };
+      requestAnimationFrame(animatePlayer);
+    }
+
+    function animatePlayer(now) {
+      if (!playerAnimation) return;
+      now = now || nowMs();
+      if (now - playerAnimation.start >= playerAnimation.duration) {
+        playerAnimation = null;
+        draw();
+        return;
+      }
+      draw();
+      requestAnimationFrame(animatePlayer);
     }
 
     function snapshotCurrentState() {
@@ -1776,6 +1802,7 @@
     function undoLastMove() {
       if (!level || feedback || !undoStack.length) return;
       const previous = undoStack.pop();
+      playerAnimation = null;
       state = {
         player: previous.player,
         blocks: previous.blocks.map((block) => ({ ...block }))
@@ -1815,6 +1842,10 @@
 
     function nowMs() {
       return typeof performance !== "undefined" ? performance.now() : Date.now();
+    }
+
+    function easeMove(progress) {
+      return 1 - Math.pow(1 - progress, 3);
     }
 
     function draw() {
@@ -1872,7 +1903,7 @@
         drawText(block.text, pos.x, pos.y, tile, "#243141", block.text.length > 3 ? .2 : .255, 900, -0.055, .56);
       });
 
-      const player = posFromIdx(state.player, size);
+      const player = playerDrawPosition(size);
       if (sprites.player.ready) {
         ctx.drawImage(sprites.player.image, player.x * tile + tile * .02, player.y * tile + tile * .02, tile * .96, tile * .96);
       } else {
@@ -1885,8 +1916,24 @@
         ctx.strokeStyle = "#173f75";
         ctx.lineWidth = 2;
         ctx.stroke();
-        drawText("P", player.x, player.y, tile, "#ffffff", .32, 900);
+        ctx.fillStyle = "#ffffff";
+        ctx.textAlign = "center";
+        ctx.textBaseline = "middle";
+        ctx.font = "900 " + Math.max(11, Math.floor(tile * .32)) + "px system-ui, sans-serif";
+        ctx.fillText("P", cx, cy, tile * .9);
       }
+    }
+
+    function playerDrawPosition(size) {
+      if (!playerAnimation) return posFromIdx(state.player, size);
+      const from = posFromIdx(playerAnimation.from, size);
+      const to = posFromIdx(playerAnimation.to, size);
+      const progress = Math.min(1, (nowMs() - playerAnimation.start) / playerAnimation.duration);
+      const eased = easeMove(progress);
+      return {
+        x: from.x + (to.x - from.x) * eased,
+        y: from.y + (to.y - from.y) * eased
+      };
     }
 
     function drawCompletionFeedback(tile) {
