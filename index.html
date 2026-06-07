@@ -1,0 +1,865 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Wordoban</title>
+  <style>
+    :root {
+      color-scheme: light;
+      --ink: #1d2430;
+      --muted: #5d6878;
+      --panel: #ffffff;
+      --line: #d7dde7;
+      --floor: #edf1f6;
+      --wall: #2f3947;
+      --target: #f4c75f;
+      --block: #3c7f78;
+      --distractor: #b45d4f;
+      --player: #2f66b3;
+      --focus: #111827;
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      color: var(--ink);
+      background: #f7f8fb;
+    }
+
+    .app {
+      width: min(1180px, 100%);
+      margin: 0 auto;
+      padding: 18px;
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) 320px;
+      gap: 18px;
+      align-items: start;
+    }
+
+    header {
+      grid-column: 1 / -1;
+      display: flex;
+      align-items: end;
+      justify-content: space-between;
+      gap: 16px;
+      border-bottom: 1px solid var(--line);
+      padding-bottom: 14px;
+    }
+
+    h1 {
+      margin: 0;
+      font-size: clamp(2rem, 4vw, 3.4rem);
+      line-height: .95;
+      letter-spacing: 0;
+    }
+
+    .subtitle {
+      margin: 8px 0 0;
+      color: var(--muted);
+      font-size: 1rem;
+    }
+
+    .board-wrap {
+      display: grid;
+      justify-items: center;
+      gap: 12px;
+      min-width: 0;
+    }
+
+    canvas {
+      width: min(100%, 78vh);
+      max-width: 760px;
+      aspect-ratio: 1;
+      border: 1px solid #c5cfdd;
+      background: var(--floor);
+      box-shadow: 0 18px 45px rgba(31, 41, 55, .12);
+      touch-action: none;
+    }
+
+    .status {
+      width: min(100%, 760px);
+      min-height: 48px;
+      border: 1px solid var(--line);
+      background: var(--panel);
+      padding: 10px 12px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      font-size: .95rem;
+      color: var(--muted);
+    }
+
+    .status strong {
+      color: var(--ink);
+    }
+
+    aside {
+      border: 1px solid var(--line);
+      background: var(--panel);
+      padding: 14px;
+      display: grid;
+      gap: 16px;
+    }
+
+    .control-group {
+      display: grid;
+      gap: 8px;
+    }
+
+    label,
+    .group-label {
+      font-size: .78rem;
+      font-weight: 800;
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: .08em;
+    }
+
+    select,
+    button {
+      font: inherit;
+    }
+
+    select {
+      width: 100%;
+      min-height: 42px;
+      border: 1px solid #b8c1cf;
+      background: #fff;
+      color: var(--ink);
+      padding: 0 10px;
+      border-radius: 6px;
+    }
+
+    .button-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+    }
+
+    button {
+      min-height: 42px;
+      border: 1px solid #aab5c5;
+      border-radius: 6px;
+      background: #fff;
+      color: var(--ink);
+      font-weight: 700;
+      cursor: pointer;
+    }
+
+    button.primary {
+      border-color: #2f66b3;
+      background: #2f66b3;
+      color: #fff;
+    }
+
+    button:focus-visible,
+    select:focus-visible {
+      outline: 3px solid rgba(47, 102, 179, .32);
+      outline-offset: 2px;
+    }
+
+    .dpad {
+      width: 168px;
+      justify-self: center;
+      display: grid;
+      grid-template-columns: repeat(3, 52px);
+      grid-template-rows: repeat(3, 52px);
+      gap: 4px;
+    }
+
+    .dpad button {
+      min-height: 52px;
+      padding: 0;
+      font-size: 1.2rem;
+      line-height: 1;
+    }
+
+    .dpad .up {
+      grid-column: 2;
+    }
+
+    .dpad .left {
+      grid-column: 1;
+      grid-row: 2;
+    }
+
+    .dpad .right {
+      grid-column: 3;
+      grid-row: 2;
+    }
+
+    .dpad .down {
+      grid-column: 2;
+      grid-row: 3;
+    }
+
+    .meta {
+      display: grid;
+      gap: 8px;
+      font-size: .92rem;
+      color: var(--muted);
+      border-top: 1px solid var(--line);
+      padding-top: 14px;
+    }
+
+    .meta span {
+      color: var(--ink);
+      font-weight: 800;
+    }
+
+    @media (max-width: 860px) {
+      .app {
+        grid-template-columns: 1fr;
+      }
+
+      header {
+        align-items: start;
+        flex-direction: column;
+      }
+
+      aside {
+        width: min(100%, 760px);
+        justify-self: center;
+      }
+
+      canvas {
+        width: min(100%, 92vh);
+      }
+    }
+  </style>
+</head>
+<body>
+  <main class="app">
+    <header>
+      <div>
+        <h1>Wordoban</h1>
+        <p class="subtitle">Hear the word, choose the right syllables, push them into the target row.</p>
+      </div>
+      <button class="primary" id="speakButton" type="button">Replay Word</button>
+    </header>
+
+    <section class="board-wrap" aria-label="Game board">
+      <canvas id="board" width="900" height="900"></canvas>
+      <div class="status" id="status">
+        <span>Generating a solvable puzzle...</span>
+      </div>
+    </section>
+
+    <aside>
+      <div class="control-group">
+        <label for="lengthSelect">Word length</label>
+        <select id="lengthSelect">
+          <option value="1">1 syllable</option>
+          <option value="2" selected>2 syllables</option>
+          <option value="3">3 syllables</option>
+          <option value="4">4+ syllables</option>
+        </select>
+      </div>
+
+      <div class="control-group">
+        <label for="sizeSelect">Board size</label>
+        <select id="sizeSelect">
+          <option value="8" selected>8 x 8</option>
+          <option value="10">10 x 10</option>
+          <option value="12">12 x 12</option>
+          <option value="14">14 x 14</option>
+        </select>
+      </div>
+
+      <div class="button-row">
+        <button id="resetButton" type="button">Reset</button>
+        <button id="newButton" type="button">New Puzzle</button>
+      </div>
+
+      <div class="control-group">
+        <div class="group-label">Touch controls</div>
+        <div class="dpad" aria-label="Directional controls">
+          <button class="up" type="button" data-dir="0,-1" aria-label="Move up">▲</button>
+          <button class="left" type="button" data-dir="-1,0" aria-label="Move left">◀</button>
+          <button class="right" type="button" data-dir="1,0" aria-label="Move right">▶</button>
+          <button class="down" type="button" data-dir="0,1" aria-label="Move down">▼</button>
+        </div>
+      </div>
+
+      <div class="meta">
+        <div>Target: <span id="wordMeta">Heard only</span></div>
+        <div>Moves: <span id="moveMeta">0</span></div>
+        <div>Solver states: <span id="solverMeta">0</span></div>
+      </div>
+    </aside>
+  </main>
+
+  <script>
+    const WORDS = [
+      { word: "cat", syllables: ["CAT"], distractors: ["CAP", "CUT", "COT", "KAT"] },
+      { word: "dog", syllables: ["DOG"], distractors: ["DIG", "DUG", "LOG", "DOT"] },
+      { word: "moon", syllables: ["MOON"], distractors: ["MOO", "MUN", "NOON", "MAN"] },
+      { word: "rain", syllables: ["RAIN"], distractors: ["RAY", "RAN", "REIN", "MAIN"] },
+      { word: "banana", syllables: ["BA", "NA", "NA"], distractors: ["BO", "NAN", "NO", "BAN"] },
+      { word: "basket", syllables: ["BAS", "KET"], distractors: ["BAT", "KIT", "BASK", "SET"] },
+      { word: "turtle", syllables: ["TUR", "TLE"], distractors: ["TER", "TALL", "TIR", "DLE"] },
+      { word: "sunset", syllables: ["SUN", "SET"], distractors: ["SIN", "SIT", "SENT", "SUP"] },
+      { word: "rocket", syllables: ["ROCK", "ET"], distractors: ["RAK", "KIT", "ROD", "IT"] },
+      { word: "butterfly", syllables: ["BUT", "TER", "FLY"], distractors: ["BAT", "DER", "FLEE", "BUTT", "TIE"] },
+      { word: "elephant", syllables: ["EL", "E", "PHANT"], distractors: ["AL", "EE", "FANT", "PLANT", "ANT"] },
+      { word: "computer", syllables: ["COM", "PU", "TER"], distractors: ["CON", "POO", "DER", "CUE", "TERM"] },
+      { word: "dinosaur", syllables: ["DI", "NO", "SAUR"], distractors: ["DYE", "NEW", "SORE", "DIN", "NOR"] },
+      { word: "alligator", syllables: ["AL", "LI", "GA", "TOR"], distractors: ["EL", "LEE", "GO", "DOOR", "GATE", "TAR"] },
+      { word: "helicopter", syllables: ["HEL", "I", "COP", "TER"], distractors: ["HILL", "EE", "CAP", "DER", "COPPER", "TUR"] },
+      { word: "watermelon", syllables: ["WA", "TER", "MEL", "ON"], distractors: ["WAY", "DER", "MAIL", "AN", "WET", "MELON"] },
+      { word: "caterpillar", syllables: ["CAT", "ER", "PIL", "LAR"], distractors: ["KAT", "AR", "PAL", "LER", "PILL", "CART"] }
+    ];
+
+    const TILE = {
+      FLOOR: 0,
+      WALL: 1
+    };
+
+    const DIRS = [
+      { x: 1, y: 0 },
+      { x: -1, y: 0 },
+      { x: 0, y: 1 },
+      { x: 0, y: -1 }
+    ];
+
+    const canvas = document.getElementById("board");
+    const ctx = canvas.getContext("2d");
+    const statusEl = document.getElementById("status");
+    const lengthSelect = document.getElementById("lengthSelect");
+    const sizeSelect = document.getElementById("sizeSelect");
+    const speakButton = document.getElementById("speakButton");
+    const resetButton = document.getElementById("resetButton");
+    const newButton = document.getElementById("newButton");
+    const wordMeta = document.getElementById("wordMeta");
+    const moveMeta = document.getElementById("moveMeta");
+    const solverMeta = document.getElementById("solverMeta");
+
+    let level = null;
+    let initialState = null;
+    let state = null;
+    let moves = 0;
+    let won = false;
+    let lastWordKey = "";
+
+    function randInt(max) {
+      return Math.floor(Math.random() * max);
+    }
+
+    function sample(items) {
+      return items[randInt(items.length)];
+    }
+
+    function shuffle(items) {
+      const copy = items.slice();
+      for (let i = copy.length - 1; i > 0; i--) {
+        const j = randInt(i + 1);
+        [copy[i], copy[j]] = [copy[j], copy[i]];
+      }
+      return copy;
+    }
+
+    function cellKey(x, y) {
+      return x + "," + y;
+    }
+
+    function idx(x, y, size) {
+      return y * size + x;
+    }
+
+    function posFromIdx(index, size) {
+      return { x: index % size, y: Math.floor(index / size) };
+    }
+
+    function getWordsForLength(lengthValue) {
+      return WORDS.filter((entry) => {
+        if (lengthValue === "4") return entry.syllables.length >= 4;
+        return entry.syllables.length === Number(lengthValue);
+      });
+    }
+
+    function distractorCount(syllableCount, size) {
+      const ranges = {
+        1: [2, 3],
+        2: [3, 4],
+        3: [4, 5],
+        4: [5, 7]
+      };
+      const [min, max] = ranges[Math.min(4, syllableCount)];
+      const sizeBonus = size >= 12 ? 1 : 0;
+      return Math.min(max + sizeBonus, min + randInt(max - min + 1) + sizeBonus);
+    }
+
+    function createGrid(size, reserved) {
+      const grid = Array.from({ length: size }, () => Array(size).fill(TILE.FLOOR));
+      for (let y = 0; y < size; y++) {
+        for (let x = 0; x < size; x++) {
+          if (x === 0 || y === 0 || x === size - 1 || y === size - 1) {
+            grid[y][x] = TILE.WALL;
+          }
+        }
+      }
+
+      const wallBudget = Math.floor(size * size * 0.045);
+      let placed = 0;
+      let attempts = 0;
+      while (placed < wallBudget && attempts < wallBudget * 18) {
+        attempts++;
+        const x = 1 + randInt(size - 2);
+        const y = 1 + randInt(size - 2);
+        if (reserved.has(cellKey(x, y))) continue;
+        if (grid[y][x] === TILE.WALL) continue;
+        if ((x + y) % 2 === 0 && Math.random() < 0.65) continue;
+        grid[y][x] = TILE.WALL;
+        if (floorIsConnected(grid)) {
+          placed++;
+        } else {
+          grid[y][x] = TILE.FLOOR;
+        }
+      }
+      return grid;
+    }
+
+    function floorIsConnected(grid) {
+      const size = grid.length;
+      let start = null;
+      let floorCount = 0;
+      for (let y = 0; y < size; y++) {
+        for (let x = 0; x < size; x++) {
+          if (grid[y][x] === TILE.FLOOR) {
+            floorCount++;
+            if (!start) start = { x, y };
+          }
+        }
+      }
+      if (!start) return false;
+
+      const seen = new Set([cellKey(start.x, start.y)]);
+      const queue = [start];
+      for (let head = 0; head < queue.length; head++) {
+        const current = queue[head];
+        for (const dir of DIRS) {
+          const nx = current.x + dir.x;
+          const ny = current.y + dir.y;
+          const key = cellKey(nx, ny);
+          if (grid[ny]?.[nx] !== TILE.FLOOR || seen.has(key)) continue;
+          seen.add(key);
+          queue.push({ x: nx, y: ny });
+        }
+      }
+      return seen.size === floorCount;
+    }
+
+    function generateLevel() {
+      const size = Number(sizeSelect.value);
+      const wordOptions = getWordsForLength(lengthSelect.value);
+      const word = chooseDifferentWord(wordOptions);
+      const syllables = word.syllables;
+      const targetY = 1;
+      const startX = Math.floor((size - syllables.length) / 2);
+      const targetCells = syllables.map((_, i) => idx(startX + i, targetY, size));
+
+      const reserved = new Set();
+      for (let i = 0; i < syllables.length; i++) {
+        for (let y = targetY; y <= Math.min(size - 2, targetY + 3); y++) {
+          reserved.add(cellKey(startX + i, y));
+        }
+      }
+      reserved.add(cellKey(Math.floor(size / 2), size - 2));
+
+      for (let attempt = 0; attempt < 250; attempt++) {
+        const grid = createGrid(size, reserved);
+        const blocks = [];
+        const occupied = new Set(targetCells.map((cell) => "t" + cell));
+
+        syllables.forEach((text, i) => {
+          const x = startX + i;
+          const y = targetY + 1;
+          blocks.push({ id: "c" + i, text, correct: true, pos: idx(x, y, size) });
+          occupied.add(String(idx(x, y, size)));
+        });
+
+        let player = idx(Math.floor(size / 2), Math.min(size - 2, targetY + 3), size);
+        if (occupied.has(String(player)) || grid[posFromIdx(player, size).y][posFromIdx(player, size).x] === TILE.WALL) {
+          player = idx(startX, Math.min(size - 2, targetY + 3), size);
+        }
+        occupied.add(String(player));
+
+        const count = distractorCount(syllables.length, size);
+        const distractors = shuffle(word.distractors).slice(0, count);
+        for (let i = 0; i < distractors.length; i++) {
+          const pos = findFreeCell(grid, occupied, size, targetY + 2);
+          if (pos === null) break;
+          blocks.push({ id: "d" + i, text: distractors[i], correct: false, pos });
+          occupied.add(String(pos));
+        }
+
+        const candidate = {
+          size,
+          grid,
+          word,
+          targetCells,
+          targetY,
+          startX,
+          blocks,
+          player
+        };
+        const solver = solveLevel(candidate, 70000);
+        if (solver.solved) {
+          candidate.solverStates = solver.states;
+          candidate.solutionLength = solver.depth;
+          return candidate;
+        }
+      }
+
+      return generateFallbackLevel(size, word, targetCells, startX, targetY);
+    }
+
+    function chooseDifferentWord(options) {
+      if (options.length <= 1) return sample(options);
+      let next = sample(options);
+      let tries = 0;
+      while (next.word === lastWordKey && tries < 8) {
+        next = sample(options);
+        tries++;
+      }
+      lastWordKey = next.word;
+      return next;
+    }
+
+    function findFreeCell(grid, occupied, size, minY) {
+      const cells = [];
+      for (let y = minY; y < size - 1; y++) {
+        for (let x = 1; x < size - 1; x++) {
+          const pos = idx(x, y, size);
+          if (grid[y][x] === TILE.FLOOR && !occupied.has(String(pos))) cells.push(pos);
+        }
+      }
+      return cells.length ? sample(cells) : null;
+    }
+
+    function generateFallbackLevel(size, word, targetCells, startX, targetY) {
+      const grid = Array.from({ length: size }, () => Array(size).fill(TILE.FLOOR));
+      for (let y = 0; y < size; y++) {
+        for (let x = 0; x < size; x++) {
+          if (x === 0 || y === 0 || x === size - 1 || y === size - 1) grid[y][x] = TILE.WALL;
+        }
+      }
+      const blocks = word.syllables.map((text, i) => ({
+        id: "c" + i,
+        text,
+        correct: true,
+        pos: idx(startX + i, targetY + 1, size)
+      }));
+      const occupied = new Set(blocks.map((block) => String(block.pos)));
+      occupied.add(String(idx(Math.floor(size / 2), targetY + 3, size)));
+      shuffle(word.distractors).slice(0, distractorCount(word.syllables.length, size)).forEach((text, i) => {
+        const pos = findFreeCell(grid, occupied, size, targetY + 4);
+        if (pos !== null) {
+          blocks.push({ id: "d" + i, text, correct: false, pos });
+          occupied.add(String(pos));
+        }
+      });
+      const fallback = {
+        size,
+        grid,
+        word,
+        targetCells,
+        targetY,
+        startX,
+        blocks,
+        player: idx(Math.floor(size / 2), targetY + 3, size)
+      };
+      const solver = solveLevel(fallback, 70000);
+      fallback.solverStates = solver.states;
+      fallback.solutionLength = solver.depth;
+      return fallback;
+    }
+
+    function solveLevel(candidate, limit) {
+      const startPositions = candidate.blocks.map((block) => block.pos);
+      const startKey = encodeState(candidate.player, startPositions);
+      const queue = [{ player: candidate.player, positions: startPositions, depth: 0 }];
+      const seen = new Set([startKey]);
+
+      for (let head = 0; head < queue.length && seen.size <= limit; head++) {
+        const current = queue[head];
+        if (isGoal(candidate, current.positions)) {
+          return { solved: true, states: seen.size, depth: current.depth };
+        }
+
+        const blockAt = mapBlocks(current.positions);
+        const playerPos = posFromIdx(current.player, candidate.size);
+        for (const dir of DIRS) {
+          const nx = playerPos.x + dir.x;
+          const ny = playerPos.y + dir.y;
+          if (!isFloor(candidate, nx, ny)) continue;
+          const nextPlayer = idx(nx, ny, candidate.size);
+          const blockIndex = blockAt.get(nextPlayer);
+
+          if (blockIndex === undefined) {
+            addSearchState(queue, seen, nextPlayer, current.positions, current.depth + 1, limit);
+            continue;
+          }
+
+          const bx = nx + dir.x;
+          const by = ny + dir.y;
+          if (!isFloor(candidate, bx, by)) continue;
+          const pushedPos = idx(bx, by, candidate.size);
+          if (blockAt.has(pushedPos)) continue;
+          const nextPositions = current.positions.slice();
+          nextPositions[blockIndex] = pushedPos;
+          addSearchState(queue, seen, nextPlayer, nextPositions, current.depth + 1, limit);
+        }
+      }
+
+      return { solved: false, states: seen.size, depth: 0 };
+    }
+
+    function addSearchState(queue, seen, player, positions, depth, limit) {
+      if (seen.size > limit) return;
+      const key = encodeState(player, positions);
+      if (seen.has(key)) return;
+      seen.add(key);
+      queue.push({ player, positions, depth });
+    }
+
+    function encodeState(player, positions) {
+      return player + "|" + positions.join(",");
+    }
+
+    function mapBlocks(positions) {
+      const map = new Map();
+      positions.forEach((pos, index) => map.set(pos, index));
+      return map;
+    }
+
+    function isFloor(candidate, x, y) {
+      return candidate.grid[y]?.[x] === TILE.FLOOR;
+    }
+
+    function isGoal(candidate, positions) {
+      for (let i = 0; i < candidate.targetCells.length; i++) {
+        const target = candidate.targetCells[i];
+        const blockIndex = positions.indexOf(target);
+        if (blockIndex === -1) return false;
+        const block = candidate.blocks[blockIndex];
+        if (!block.correct || block.text !== candidate.word.syllables[i]) return false;
+      }
+      return true;
+    }
+
+    function loadNewLevel() {
+      statusEl.innerHTML = "<span>Generating a solvable puzzle...</span>";
+      level = generateLevel();
+      initialState = {
+        player: level.player,
+        blocks: level.blocks.map((block) => ({ ...block }))
+      };
+      resetCurrentLevel();
+      speakWord();
+    }
+
+    function resetCurrentLevel() {
+      state = {
+        player: initialState.player,
+        blocks: initialState.blocks.map((block) => ({ ...block }))
+      };
+      moves = 0;
+      won = false;
+      updateMeta();
+      updateStatus();
+      draw();
+    }
+
+    function updateMeta() {
+      wordMeta.textContent = level && won ? level.word.word : "Heard only";
+      moveMeta.textContent = String(moves);
+      solverMeta.textContent = level ? String(level.solverStates) : "0";
+    }
+
+    function updateStatus() {
+      if (!level) return;
+      if (won) {
+        statusEl.innerHTML = "<span><strong>Complete.</strong> The target row spells the heard word.</span><span>" + moves + " moves</span>";
+        return;
+      }
+      const slots = level.word.syllables.map(() => "_").join(" | ");
+      statusEl.innerHTML = "<span><strong>Listen, then build:</strong> " + slots + "</span><span>" + level.size + " x " + level.size + "</span>";
+    }
+
+    function speakWord() {
+      if (!level || !("speechSynthesis" in window)) {
+        statusEl.innerHTML = "<span><strong>Speech is unavailable.</strong> Use the displayed word for this browser.</span>";
+        return;
+      }
+      window.speechSynthesis.cancel();
+      const utterance = new SpeechSynthesisUtterance(level.word.word);
+      utterance.rate = 0.82;
+      utterance.pitch = 1;
+      window.speechSynthesis.speak(utterance);
+    }
+
+    function movePlayer(dx, dy) {
+      if (!level || won) return;
+      const player = posFromIdx(state.player, level.size);
+      const nx = player.x + dx;
+      const ny = player.y + dy;
+      if (!isFloor(level, nx, ny)) return;
+
+      const next = idx(nx, ny, level.size);
+      const blockIndex = state.blocks.findIndex((block) => block.pos === next);
+      if (blockIndex === -1) {
+        state.player = next;
+        moves++;
+      } else {
+        const bx = nx + dx;
+        const by = ny + dy;
+        const pushed = idx(bx, by, level.size);
+        if (!isFloor(level, bx, by) || state.blocks.some((block) => block.pos === pushed)) return;
+        state.blocks[blockIndex].pos = pushed;
+        state.player = next;
+        moves++;
+      }
+
+      if (isGoal(level, state.blocks.map((block) => block.pos))) {
+        won = true;
+      }
+      updateMeta();
+      updateStatus();
+      draw();
+    }
+
+    function draw() {
+      if (!level || !state) return;
+      const size = level.size;
+      const scale = window.devicePixelRatio || 1;
+      const cssSize = Math.min(canvas.clientWidth || 900, canvas.clientHeight || 900);
+      canvas.width = Math.floor(cssSize * scale);
+      canvas.height = Math.floor(cssSize * scale);
+      ctx.setTransform(scale, 0, 0, scale, 0, 0);
+
+      const tile = cssSize / size;
+      ctx.clearRect(0, 0, cssSize, cssSize);
+
+      for (let y = 0; y < size; y++) {
+        for (let x = 0; x < size; x++) {
+          ctx.fillStyle = level.grid[y][x] === TILE.WALL ? "#2f3947" : "#edf1f6";
+          ctx.fillRect(x * tile, y * tile, tile, tile);
+          ctx.strokeStyle = "#d7dde7";
+          ctx.lineWidth = 1;
+          ctx.strokeRect(x * tile, y * tile, tile, tile);
+        }
+      }
+
+      level.targetCells.forEach((target, i) => {
+        const pos = posFromIdx(target, size);
+        ctx.fillStyle = "#f4c75f";
+        ctx.fillRect(pos.x * tile + 4, pos.y * tile + 4, tile - 8, tile - 8);
+        ctx.strokeStyle = "#9a7426";
+        ctx.lineWidth = 2;
+        ctx.strokeRect(pos.x * tile + 5, pos.y * tile + 5, tile - 10, tile - 10);
+        drawText(String(i + 1), pos.x, pos.y, tile, "#5c4214", .42, 800);
+      });
+
+      state.blocks.forEach((block) => {
+        const pos = posFromIdx(block.pos, size);
+        const x = pos.x * tile;
+        const y = pos.y * tile;
+        ctx.fillStyle = block.correct ? "#3c7f78" : "#b45d4f";
+        roundRect(x + 5, y + 5, tile - 10, tile - 10, Math.min(7, tile * .12));
+        ctx.fill();
+        ctx.strokeStyle = "rgba(0,0,0,.2)";
+        ctx.lineWidth = 2;
+        ctx.stroke();
+        drawText(block.text, pos.x, pos.y, tile, "#ffffff", block.text.length > 3 ? .26 : .33, 900);
+      });
+
+      const player = posFromIdx(state.player, size);
+      const cx = player.x * tile + tile / 2;
+      const cy = player.y * tile + tile / 2;
+      ctx.fillStyle = "#2f66b3";
+      ctx.beginPath();
+      ctx.arc(cx, cy, tile * .34, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.strokeStyle = "#173f75";
+      ctx.lineWidth = 2;
+      ctx.stroke();
+      drawText("P", player.x, player.y, tile, "#ffffff", .32, 900);
+    }
+
+    function roundRect(x, y, width, height, radius) {
+      ctx.beginPath();
+      ctx.moveTo(x + radius, y);
+      ctx.lineTo(x + width - radius, y);
+      ctx.quadraticCurveTo(x + width, y, x + width, y + radius);
+      ctx.lineTo(x + width, y + height - radius);
+      ctx.quadraticCurveTo(x + width, y + height, x + width - radius, y + height);
+      ctx.lineTo(x + radius, y + height);
+      ctx.quadraticCurveTo(x, y + height, x, y + height - radius);
+      ctx.lineTo(x, y + radius);
+      ctx.quadraticCurveTo(x, y, x + radius, y);
+      ctx.closePath();
+    }
+
+    function drawText(text, gridX, gridY, tile, color, ratio, weight) {
+      ctx.fillStyle = color;
+      ctx.textAlign = "center";
+      ctx.textBaseline = "middle";
+      ctx.font = weight + " " + Math.max(11, Math.floor(tile * ratio)) + "px system-ui, sans-serif";
+      ctx.fillText(text, gridX * tile + tile / 2, gridY * tile + tile / 2, tile - 8);
+    }
+
+    window.addEventListener("keydown", (event) => {
+      const keys = {
+        ArrowUp: [0, -1],
+        KeyW: [0, -1],
+        ArrowDown: [0, 1],
+        KeyS: [0, 1],
+        ArrowLeft: [-1, 0],
+        KeyA: [-1, 0],
+        ArrowRight: [1, 0],
+        KeyD: [1, 0]
+      };
+      const dir = keys[event.code];
+      if (!dir) return;
+      event.preventDefault();
+      movePlayer(dir[0], dir[1]);
+    });
+
+    document.querySelectorAll("[data-dir]").forEach((button) => {
+      button.addEventListener("click", () => {
+        const [dx, dy] = button.dataset.dir.split(",").map(Number);
+        movePlayer(dx, dy);
+      });
+    });
+
+    speakButton.addEventListener("click", speakWord);
+    resetButton.addEventListener("click", resetCurrentLevel);
+    newButton.addEventListener("click", loadNewLevel);
+    lengthSelect.addEventListener("change", loadNewLevel);
+    sizeSelect.addEventListener("change", loadNewLevel);
+    window.addEventListener("resize", draw);
+
+    window.__wordobanTest = {
+      generateLevel,
+      solveLevel,
+      setSettings(length, size) {
+        lengthSelect.value = String(length);
+        sizeSelect.value = String(size);
+      },
+      current() {
+        return { level, state, won, moves };
+      }
+    };
+
+    loadNewLevel();
+  </script>
+</body>
+</html>
