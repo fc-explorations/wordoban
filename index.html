@@ -640,7 +640,14 @@
 
     const GENERATION_ATTEMPTS = 14;
     const GENERATION_SOLVER_LIMIT = 8000;
-    const FLOOR_PALETTE = { base: "#f7fbf4", soft: "#edf8ee", accent: "#e6f3f7", grid: "#b9d7d1" };
+    const FLOOR_PALETTES = [
+      { base: "#f7fbf4", soft: "#edf8ee", accent: "#e6f3f7", grid: "#b9d7d1" },
+      { base: "#fff9ee", soft: "#f7f0df", accent: "#eef4ed", grid: "#d8cdb9" },
+      { base: "#f8f6ff", soft: "#eef4ff", accent: "#f7f1e8", grid: "#cfd8e8" },
+      { base: "#f4fbfa", soft: "#eaf5ef", accent: "#fff6e6", grid: "#c8d8d4" },
+      { base: "#fff7f2", soft: "#f3f7e8", accent: "#edf5ff", grid: "#dccdc4" },
+      { base: "#f7faf2", soft: "#eef2ff", accent: "#fff2df", grid: "#d3d8c5" }
+    ];
     const SETTINGS_STORAGE_KEY = "wordoban.settings";
     const WORD_CYCLE_STORAGE_KEY = "wordoban.wordCycles";
     const DEFAULT_SETTINGS = {
@@ -689,6 +696,7 @@
     let playerAnimation = null;
     let playerFacing = 0;
     let boardPointerStart = null;
+    let lastFloorPaletteIndex = -1;
     const sprites = {
       block: loadSprite("assets/block.png"),
       player: loadSprite("assets/player.png"),
@@ -721,6 +729,16 @@
         [copy[i], copy[j]] = [copy[j], copy[i]];
       }
       return copy;
+    }
+
+    function chooseFloorPalette() {
+      if (FLOOR_PALETTES.length === 1) return FLOOR_PALETTES[0];
+      let index = randInt(FLOOR_PALETTES.length);
+      while (index === lastFloorPaletteIndex) {
+        index = randInt(FLOOR_PALETTES.length);
+      }
+      lastFloorPaletteIndex = index;
+      return FLOOR_PALETTES[index];
     }
 
     function cellKey(x, y) {
@@ -1650,6 +1668,7 @@
       feedback = null;
       undoStack = [];
       level = generateLevel(forcedWord);
+      level.floorPalette = chooseFloorPalette();
       initialState = {
         player: level.player,
         blocks: level.blocks.map((block) => ({ ...block }))
@@ -1872,13 +1891,14 @@
 
       const tile = cssSize / size;
       ctx.clearRect(0, 0, cssSize, cssSize);
+      const floorPalette = level.floorPalette || FLOOR_PALETTES[0];
 
       for (let y = 0; y < size; y++) {
         for (let x = 0; x < size; x++) {
-          const floorColor = (x + y) % 5 === 0 ? FLOOR_PALETTE.soft : (x + y) % 3 === 0 ? FLOOR_PALETTE.accent : FLOOR_PALETTE.base;
+          const floorColor = (x + y) % 5 === 0 ? floorPalette.soft : (x + y) % 3 === 0 ? floorPalette.accent : floorPalette.base;
           ctx.fillStyle = floorColor;
           ctx.fillRect(x * tile, y * tile, tile, tile);
-          ctx.strokeStyle = FLOOR_PALETTE.grid;
+          ctx.strokeStyle = floorPalette.grid;
           ctx.lineWidth = 1;
           ctx.strokeRect(x * tile, y * tile, tile, tile);
           if (level.grid[y][x] === TILE.WALL) {
