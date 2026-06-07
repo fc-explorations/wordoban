@@ -569,6 +569,7 @@
     const GENERATION_ATTEMPTS = 6;
     const GENERATION_SOLVER_LIMIT = 8000;
     const FLOOR_PALETTE = { base: "#f7fbf4", soft: "#edf8ee", accent: "#e6f3f7", grid: "#b9d7d1" };
+    const SETTINGS_STORAGE_KEY = "wordoban.settings";
     const DEFAULT_SETTINGS = {
       length: 2,
       size: 12,
@@ -1021,20 +1022,65 @@
       dragMaxValue.textContent = dragMoves.max + " move" + (dragMoves.max === 1 ? "" : "s");
     }
 
+    function currentSettings() {
+      const wallLengths = normalizeWallLengths();
+      const dragMoves = normalizeDragMoves();
+      return {
+        length: Number(lengthSelect.value),
+        size: normalizeBoardSize(),
+        wallCount: Number(wallCountSelect.value),
+        minWallLength: wallLengths.min,
+        maxWallLength: wallLengths.max,
+        minSolutionMoves: dragMoves.min,
+        maxSolutionMoves: dragMoves.max
+      };
+    }
+
+    function applySettings(settings) {
+      const next = { ...DEFAULT_SETTINGS, ...settings };
+      lengthSelect.value = String(Math.max(1, Math.min(4, Math.round(Number(next.length) || DEFAULT_SETTINGS.length))));
+      sizeSelect.value = String(next.size);
+      wallCountSelect.value = String(next.wallCount);
+      wallMinLengthSelect.value = String(next.minWallLength);
+      wallLengthSelect.value = String(next.maxWallLength);
+      dragMinSelect.value = String(next.minSolutionMoves);
+      dragMaxSelect.value = String(next.maxSolutionMoves);
+      updateSettingLabels();
+    }
+
+    function saveSettings() {
+      if (typeof localStorage === "undefined") return;
+      try {
+        localStorage.setItem(SETTINGS_STORAGE_KEY, JSON.stringify(currentSettings()));
+      } catch (error) {
+      }
+    }
+
+    function loadSavedSettings() {
+      if (typeof localStorage === "undefined") return;
+      try {
+        const raw = localStorage.getItem(SETTINGS_STORAGE_KEY);
+        if (!raw) return;
+        applySettings({ ...DEFAULT_SETTINGS, ...JSON.parse(raw) });
+      } catch (error) {
+        applySettings(DEFAULT_SETTINGS);
+      }
+    }
+
     function applySettingChange() {
       updateSettingLabels();
+      saveSettings();
       loadNewLevel();
     }
 
-    function resetSettingsToDefaults() {
-      lengthSelect.value = String(DEFAULT_SETTINGS.length);
-      sizeSelect.value = String(DEFAULT_SETTINGS.size);
-      wallCountSelect.value = String(DEFAULT_SETTINGS.wallCount);
-      wallMinLengthSelect.value = String(DEFAULT_SETTINGS.minWallLength);
-      wallLengthSelect.value = String(DEFAULT_SETTINGS.maxWallLength);
-      dragMinSelect.value = String(DEFAULT_SETTINGS.minSolutionMoves);
-      dragMaxSelect.value = String(DEFAULT_SETTINGS.maxSolutionMoves);
+    function handleSettingInput() {
       updateSettingLabels();
+      saveSettings();
+    }
+
+    function resetSettingsToDefaults() {
+      applySettings(DEFAULT_SETTINGS);
+      saveSettings();
       loadNewLevel();
     }
 
@@ -1618,17 +1664,21 @@
     settingsGenerateButton.addEventListener("click", () => {
       settingsPanel.hidden = true;
       settingsButton.setAttribute("aria-expanded", "false");
+      saveSettings();
       loadNewLevel();
     });
     resetButton.addEventListener("click", resetCurrentLevel);
-    newButton.addEventListener("click", () => loadNewLevel());
-    lengthSelect.addEventListener("input", updateSettingLabels);
-    sizeSelect.addEventListener("input", updateSettingLabels);
-    wallCountSelect.addEventListener("input", updateSettingLabels);
-    wallMinLengthSelect.addEventListener("input", updateSettingLabels);
-    wallLengthSelect.addEventListener("input", updateSettingLabels);
-    dragMinSelect.addEventListener("input", updateSettingLabels);
-    dragMaxSelect.addEventListener("input", updateSettingLabels);
+    newButton.addEventListener("click", () => {
+      saveSettings();
+      loadNewLevel();
+    });
+    lengthSelect.addEventListener("input", handleSettingInput);
+    sizeSelect.addEventListener("input", handleSettingInput);
+    wallCountSelect.addEventListener("input", handleSettingInput);
+    wallMinLengthSelect.addEventListener("input", handleSettingInput);
+    wallLengthSelect.addEventListener("input", handleSettingInput);
+    dragMinSelect.addEventListener("input", handleSettingInput);
+    dragMaxSelect.addEventListener("input", handleSettingInput);
     lengthSelect.addEventListener("change", applySettingChange);
     sizeSelect.addEventListener("change", applySettingChange);
     wallCountSelect.addEventListener("change", applySettingChange);
@@ -1662,6 +1712,7 @@
 
     async function initializeGame() {
       await loadWords();
+      loadSavedSettings();
       updateSettingLabels();
       loadNewLevel();
     }
