@@ -1,0 +1,7 @@
+.DS_Store
+.vscode/
+
+# Local source sheets / generated originals not used directly by the page.
+assets/background.png
+assets/images.png
+assets/walls.png
