@@ -421,6 +421,21 @@
     let moves = 0;
     let won = false;
     let lastWordKey = "";
+    const sprites = {
+      block: loadSprite("assets/block.png"),
+      player: loadSprite("assets/player.png")
+    };
+
+    function loadSprite(src) {
+      if (typeof Image === "undefined") return { image: null, ready: false };
+      const sprite = { image: new Image(), ready: false };
+      sprite.image.onload = () => {
+        sprite.ready = true;
+        draw();
+      };
+      sprite.image.src = src;
+      return sprite;
+    }
 
     function randInt(max) {
       return Math.floor(Math.random() * max);
@@ -925,26 +940,34 @@
         const pos = posFromIdx(block.pos, size);
         const x = pos.x * tile;
         const y = pos.y * tile;
-        ctx.fillStyle = block.correct ? "#3c7f78" : "#b45d4f";
-        roundRect(x + 5, y + 5, tile - 10, tile - 10, Math.min(7, tile * .12));
-        ctx.fill();
-        ctx.strokeStyle = "rgba(0,0,0,.2)";
-        ctx.lineWidth = 2;
-        ctx.stroke();
-        drawText(block.text, pos.x, pos.y, tile, "#ffffff", block.text.length > 3 ? .26 : .33, 900);
+        if (sprites.block.ready) {
+          ctx.drawImage(sprites.block.image, x + tile * .03, y + tile * .03, tile * .94, tile * .94);
+        } else {
+          ctx.fillStyle = "#d7b276";
+          roundRect(x + 5, y + 5, tile - 10, tile - 10, Math.min(7, tile * .12));
+          ctx.fill();
+          ctx.strokeStyle = "rgba(0,0,0,.24)";
+          ctx.lineWidth = 2;
+          ctx.stroke();
+        }
+        drawText(block.text, pos.x, pos.y, tile, "#243141", block.text.length > 3 ? .25 : .32, 900);
       });
 
       const player = posFromIdx(state.player, size);
-      const cx = player.x * tile + tile / 2;
-      const cy = player.y * tile + tile / 2;
-      ctx.fillStyle = "#2f66b3";
-      ctx.beginPath();
-      ctx.arc(cx, cy, tile * .34, 0, Math.PI * 2);
-      ctx.fill();
-      ctx.strokeStyle = "#173f75";
-      ctx.lineWidth = 2;
-      ctx.stroke();
-      drawText("P", player.x, player.y, tile, "#ffffff", .32, 900);
+      if (sprites.player.ready) {
+        ctx.drawImage(sprites.player.image, player.x * tile + tile * .02, player.y * tile + tile * .02, tile * .96, tile * .96);
+      } else {
+        const cx = player.x * tile + tile / 2;
+        const cy = player.y * tile + tile / 2;
+        ctx.fillStyle = "#2f66b3";
+        ctx.beginPath();
+        ctx.arc(cx, cy, tile * .34, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.strokeStyle = "#173f75";
+        ctx.lineWidth = 2;
+        ctx.stroke();
+        drawText("P", player.x, player.y, tile, "#ffffff", .32, 900);
+      }
     }
 
     function roundRect(x, y, width, height, radius) {
