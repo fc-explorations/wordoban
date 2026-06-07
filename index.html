@@ -436,7 +436,6 @@
         <p class="subtitle">Hear the word, choose the right syllables, push them into the target row.</p>
       </div>
       <div class="toolbar-actions">
-        <button id="resetButton" type="button">Reset</button>
         <button id="newButton" type="button">New Puzzle</button>
         <button class="primary icon-label" id="speakButton" type="button">
           <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
@@ -625,7 +624,6 @@
     const closeSettingsButton = document.getElementById("closeSettingsButton");
     const settingsResetButton = document.getElementById("settingsResetButton");
     const settingsGenerateButton = document.getElementById("settingsGenerateButton");
-    const resetButton = document.getElementById("resetButton");
     const newButton = document.getElementById("newButton");
 
     let level = null;
@@ -1866,7 +1864,6 @@
       saveSettings();
       loadNewLevel();
     });
-    resetButton.addEventListener("click", resetCurrentLevel);
     newButton.addEventListener("click", () => {
       saveSettings();
       loadNewLevel();
