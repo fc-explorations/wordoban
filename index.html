@@ -213,6 +213,20 @@
       color: #fff;
     }
 
+    button.icon-label {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      padding: 0 16px;
+    }
+
+    button.icon-label svg {
+      width: 22px;
+      height: 22px;
+      flex: 0 0 auto;
+    }
+
     button:focus-visible,
     select:focus-visible,
     input:focus-visible {
@@ -294,7 +308,14 @@
         <p class="subtitle">Hear the word, choose the right syllables, push them into the target row.</p>
       </div>
       <div class="toolbar-actions">
-        <button class="primary" id="speakButton" type="button">Replay Word</button>
+        <button class="primary icon-label" id="speakButton" type="button">
+          <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+            <path fill="currentColor" d="M4 9.5v5h3.4l4.1 3.4c.7.6 1.8.1 1.8-.8V6.9c0-.9-1.1-1.4-1.8-.8L7.4 9.5H4Z"></path>
+            <path fill="none" stroke="currentColor" stroke-linecap="round" stroke-width="2.2" d="M16 9c.8.8 1.2 1.8 1.2 3s-.4 2.2-1.2 3"></path>
+            <path fill="none" stroke="currentColor" stroke-linecap="round" stroke-width="2.2" d="M18.8 6.5c1.5 1.5 2.3 3.4 2.3 5.5s-.8 4-2.3 5.5"></path>
+          </svg>
+          <span>Replay Word</span>
+        </button>
         <button class="icon-button" id="settingsButton" type="button" aria-label="Open setup" aria-expanded="false" aria-controls="settingsPanel">⚙</button>
       </div>
     </header>
