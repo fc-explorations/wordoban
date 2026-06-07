@@ -73,6 +73,23 @@
       font-size: 1rem;
     }
 
+    .score-pill {
+      margin-top: 7px;
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      color: var(--accent);
+      font-size: .88rem;
+      font-weight: 850;
+      letter-spacing: 0;
+      opacity: .82;
+    }
+
+    .score-pill span:last-child {
+      min-width: 1.4em;
+      text-align: left;
+    }
+
     .toolbar-actions {
       display: flex;
       align-items: center;
@@ -169,7 +186,9 @@
     .command-button,
     .toolbar-actions .icon-button,
     .settings-actions button,
-    #closeSettingsButton {
+    .character-action,
+    #closeSettingsButton,
+    #closeCharactersButton {
       border: 0;
       background: transparent;
       color: var(--accent);
@@ -186,7 +205,9 @@
     .command-button:hover,
     .toolbar-actions .icon-button:hover,
     .settings-actions button:hover,
-    #closeSettingsButton:hover {
+    .character-action:hover,
+    #closeSettingsButton:hover,
+    #closeCharactersButton:hover {
       border: 0;
       background: transparent;
       color: #25599f;
@@ -343,6 +364,104 @@
       font-size: .9rem;
     }
 
+    .character-summary {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      color: var(--muted);
+      font-size: .88rem;
+      font-weight: 750;
+    }
+
+    .character-feature {
+      min-height: 190px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: radial-gradient(circle at center, #ffffff 0%, #ffffff 38%, #edf6ff 100%);
+      display: grid;
+      place-items: center;
+      padding: 12px;
+    }
+
+    .character-feature > div {
+      display: grid;
+      justify-items: center;
+      width: 100%;
+    }
+
+    .character-feature img {
+      width: min(210px, 70%);
+      aspect-ratio: 1;
+      object-fit: contain;
+    }
+
+    .character-feature-name {
+      margin-top: -2px;
+      color: var(--ink);
+      font-size: .95rem;
+      font-weight: 900;
+      text-align: center;
+    }
+
+    .character-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 12px;
+    }
+
+    .character-card {
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: #fff;
+      padding: 10px;
+      display: grid;
+      gap: 8px;
+      justify-items: center;
+      text-align: center;
+    }
+
+    .character-card.selected {
+      border-color: rgba(47, 102, 179, .7);
+      box-shadow: 0 0 0 2px rgba(47, 102, 179, .12);
+    }
+
+    .character-card:hover,
+    .character-card:focus-within {
+      border-color: rgba(47, 102, 179, .55);
+      box-shadow: 0 8px 18px rgba(31, 41, 55, .08);
+    }
+
+    .character-preview {
+      width: 74px;
+      height: 74px;
+      object-fit: contain;
+    }
+
+    .character-name {
+      font-weight: 850;
+      color: var(--ink);
+      font-size: .9rem;
+    }
+
+    .character-cost {
+      color: var(--muted);
+      font-size: .8rem;
+      font-weight: 750;
+    }
+
+    .character-action {
+      min-height: 30px;
+      font-size: .84rem;
+      font-weight: 850;
+    }
+
+    .character-action:disabled {
+      cursor: default;
+      color: #9aa5b5;
+      opacity: .75;
+    }
+
     select,
     input,
     button {
@@ -464,6 +583,10 @@
         grid-template-columns: 1fr;
       }
 
+      .character-grid {
+        grid-template-columns: 1fr;
+      }
+
       canvas {
         width: min(100%, 92vh);
       }
@@ -476,6 +599,10 @@
       <div>
         <img class="logo" src="assets/logo.png" alt="Wordoban">
         <p class="subtitle">Hear the word, choose the right syllables, push them into the target row.</p>
+        <div class="score-pill" aria-live="polite">
+          <span>Points</span>
+          <span id="scoreValue">0</span>
+        </div>
       </div>
       <div class="toolbar-actions">
         <button class="command-button" id="newButton" type="button">
@@ -493,6 +620,10 @@
             <path fill="none" stroke="currentColor" stroke-linecap="round" stroke-width="2.2" d="M18.8 6.5c1.5 1.5 2.3 3.4 2.3 5.5s-.8 4-2.3 5.5"></path>
           </svg>
           <span>Replay</span>
+        </button>
+        <button class="command-button" id="charactersButton" type="button" aria-label="Open characters" aria-expanded="false" aria-controls="charactersPanel">
+          <span class="command-icon" aria-hidden="true">○</span>
+          <span>Characters</span>
         </button>
         <button class="command-button setup-trigger" id="settingsButton" type="button" aria-label="Open setup" aria-expanded="false" aria-controls="settingsPanel">
           <span class="command-icon" aria-hidden="true">⚙</span>
@@ -522,6 +653,18 @@
         </div>
         <button class="icon-button" id="closeSettingsButton" type="button" aria-label="Close setup">×</button>
       </div>
+
+      <section class="settings-section" aria-label="Level settings">
+        <div class="section-title"><span class="section-icon">★</span><span>Level</span></div>
+        <div class="control-group">
+          <div class="control-heading">
+            <label for="levelSelect">Difficulty level</label>
+            <span class="control-value" id="levelValue">Level 2</span>
+          </div>
+          <input id="levelSelect" type="range" min="1" max="4" step="1" value="2">
+          <div class="range-labels" aria-hidden="true"><span>1</span><span>2</span><span>3</span><span>4</span></div>
+        </div>
+      </section>
 
       <section class="settings-section" aria-label="Word settings">
         <div class="section-title"><span class="section-icon word">W</span><span>Word</span></div>
@@ -609,6 +752,33 @@
         </button>
       </div>
     </aside>
+
+    <aside id="charactersPanel" hidden>
+      <div class="settings-head">
+        <div class="settings-title">
+          <span class="settings-gear" aria-hidden="true">○</span>
+          <div>
+            <h2>Characters</h2>
+            <p>Spend points to unlock a player.</p>
+          </div>
+        </div>
+        <button class="icon-button" id="closeCharactersButton" type="button" aria-label="Close characters">×</button>
+      </div>
+
+      <div class="character-summary">
+        <span>Available points</span>
+        <span class="control-value" id="characterPointsValue">0</span>
+      </div>
+
+      <div class="character-feature" aria-live="polite">
+        <div>
+          <img id="characterFeatureImage" src="assets/player_blue.png" alt="Captain Comma">
+          <div class="character-feature-name" id="characterFeatureName">Captain Comma</div>
+        </div>
+      </div>
+
+      <div class="character-grid" id="characterList" aria-label="Character choices"></div>
+    </aside>
   </main>
 
   <script>
@@ -657,7 +827,26 @@
     ];
     const SETTINGS_STORAGE_KEY = "wordoban.settings";
     const WORD_CYCLE_STORAGE_KEY = "wordoban.wordCycles";
+    const SCORE_STORAGE_KEY = "wordoban.score";
+    const CHARACTER_STORAGE_KEY = "wordoban.characters";
+    const CHARACTER_OPTIONS = [
+      { id: "blue", name: "Captain Comma", src: "assets/player_blue.png", cost: 0 },
+      { id: "blue-2", name: "Syllable Scout", src: "assets/player_blue_2.png", cost: 8 },
+      { id: "blue-3", name: "Vowel Voyager", src: "assets/player_blue_3.png", cost: 14 },
+      { id: "blue-4", name: "Rhyme Ranger", src: "assets/player_blue_4.png", cost: 20 },
+      { id: "blue-5", name: "Prefix Pilot", src: "assets/player_blue_5.png", cost: 26 },
+      { id: "blue-6", name: "Suffix Spark", src: "assets/player_blue_6.png", cost: 32 },
+      { id: "blue-7", name: "Word Wizard", src: "assets/player_blue_7.png", cost: 38 },
+      { id: "blue-8", name: "Lexicon Legend", src: "assets/player_blue_8.png", cost: 44 }
+    ];
+    const LEVEL_PRESETS = {
+      1: { length: 1, size: 12, wallCount: 4, minWallLength: 1, maxWallLength: 2, minSolutionMoves: 2, maxSolutionMoves: 5 },
+      2: { length: 2, size: 12, wallCount: 8, minWallLength: 1, maxWallLength: 3, minSolutionMoves: 3, maxSolutionMoves: 8 },
+      3: { length: 3, size: 14, wallCount: 12, minWallLength: 2, maxWallLength: 4, minSolutionMoves: 5, maxSolutionMoves: 12 },
+      4: { length: 4, size: 16, wallCount: 16, minWallLength: 2, maxWallLength: 5, minSolutionMoves: 8, maxSolutionMoves: 18 }
+    };
     const DEFAULT_SETTINGS = {
+      level: 2,
       length: 2,
       size: 12,
       wallCount: 8,
@@ -669,6 +858,7 @@
 
     const canvas = document.getElementById("board");
     const ctx = canvas.getContext("2d");
+    const levelSelect = document.getElementById("levelSelect");
     const lengthSelect = document.getElementById("lengthSelect");
     const sizeSelect = document.getElementById("sizeSelect");
     const wallCountSelect = document.getElementById("wallCountSelect");
@@ -676,6 +866,7 @@
     const wallLengthSelect = document.getElementById("wallLengthSelect");
     const dragMinSelect = document.getElementById("dragMinSelect");
     const dragMaxSelect = document.getElementById("dragMaxSelect");
+    const levelValue = document.getElementById("levelValue");
     const lengthValue = document.getElementById("lengthValue");
     const sizeValue = document.getElementById("sizeValue");
     const wallCountValue = document.getElementById("wallCountValue");
@@ -683,6 +874,14 @@
     const wallLengthValue = document.getElementById("wallLengthValue");
     const dragMinValue = document.getElementById("dragMinValue");
     const dragMaxValue = document.getElementById("dragMaxValue");
+    const scoreValue = document.getElementById("scoreValue");
+    const characterPointsValue = document.getElementById("characterPointsValue");
+    const characterList = document.getElementById("characterList");
+    const characterFeatureImage = document.getElementById("characterFeatureImage");
+    const characterFeatureName = document.getElementById("characterFeatureName");
+    const charactersButton = document.getElementById("charactersButton");
+    const charactersPanel = document.getElementById("charactersPanel");
+    const closeCharactersButton = document.getElementById("closeCharactersButton");
     const speakButton = document.getElementById("speakButton");
     const settingsButton = document.getElementById("settingsButton");
     const settingsPanel = document.getElementById("settingsPanel");
@@ -697,6 +896,9 @@
     let state = null;
     let undoStack = [];
     let moves = 0;
+    let score = 0;
+    let unlockedCharacters = ["blue"];
+    let currentCharacterId = "blue";
     let won = false;
     let wordCycles = {};
     let feedback = null;
@@ -706,9 +908,12 @@
     let lastFloorPaletteIndex = -1;
     const sprites = {
       block: loadSprite("assets/block.png"),
-      player: loadSprite("assets/player.png"),
       wall: loadSprite("assets/walls/isolated.png")
     };
+    const characterSprites = {};
+    CHARACTER_OPTIONS.forEach((character) => {
+      characterSprites[character.id] = loadSprite(character.src);
+    });
 
     function loadSprite(src) {
       if (typeof Image === "undefined") return { image: null, ready: false };
@@ -978,11 +1183,12 @@
           if (!grid) continue;
           if (countInteriorWalls(grid) < 1) continue;
           const occupied = new Set(targetCells.map((cell) => String(cell)));
+          const placementBlocked = new Set(occupied);
 
           const count = distractorCount(syllables.length, size);
-          const distractors = createDistractorBlocks(word, count, grid, occupied, size, targetY + 2, targetColumns);
+          const distractors = createDistractorBlocks(word, count, grid, occupied, placementBlocked, size, targetY + 2, targetColumns);
           if (!distractors) continue;
-          const blocks = createDraggedSolutionBlocks(word, grid, occupied, size, targetCells, dragMoves.min, dragMoves.max, targetColumns);
+          const blocks = createDraggedSolutionBlocks(word, grid, occupied, placementBlocked, size, targetCells, dragMoves.min, dragMoves.max, targetColumns);
           if (!blocks) continue;
 
           const player = findFreeCell(grid, occupied, size, targetY + 2);
@@ -1021,7 +1227,20 @@
       return fallback;
     }
 
-    function createDistractorBlocks(word, distractorTotal, grid, occupied, size, minY, forbiddenColumns = new Set()) {
+    function reserveInitialBlockSpace(blocked, pos, size) {
+      const point = posFromIdx(pos, size);
+      for (let dy = -1; dy <= 1; dy++) {
+        for (let dx = -1; dx <= 1; dx++) {
+          const x = point.x + dx;
+          const y = point.y + dy;
+          if (x >= 0 && y >= 0 && x < size && y < size) {
+            blocked.add(String(idx(x, y, size)));
+          }
+        }
+      }
+    }
+
+    function createDistractorBlocks(word, distractorTotal, grid, occupied, placementBlocked, size, minY, forbiddenColumns = new Set()) {
       const blocks = [];
       const distractors = shuffle(word.distractors).slice(0, distractorTotal);
       const requiredTop = Math.ceil(distractors.length / 2);
@@ -1029,17 +1248,18 @@
       for (let i = 0; i < distractors.length; i++) {
         let pos = null;
         if (i < requiredTop) {
-          pos = findFreeCellInRows(grid, occupied, size, minY, topMaxY, forbiddenColumns);
+          pos = findFreeCellInRows(grid, placementBlocked, size, minY, topMaxY, forbiddenColumns);
         }
-        if (pos === null) pos = findFreeCell(grid, occupied, size, minY, forbiddenColumns);
+        if (pos === null) pos = findFreeCell(grid, placementBlocked, size, minY, forbiddenColumns);
         if (pos === null) return null;
         blocks.push({ id: "d" + i, text: distractors[i], correct: false, pos });
         occupied.add(String(pos));
+        reserveInitialBlockSpace(placementBlocked, pos, size);
       }
       return blocks;
     }
 
-    function createDraggedSolutionBlocks(word, grid, occupied, size, targetCells, minMoves, maxMoves, forbiddenColumns = new Set()) {
+    function createDraggedSolutionBlocks(word, grid, occupied, placementBlocked, size, targetCells, minMoves, maxMoves, forbiddenColumns = new Set()) {
       const blocks = [];
       for (let i = 0; i < word.syllables.length; i++) {
         let dragged = null;
@@ -1047,7 +1267,7 @@
         for (let attempt = 0; attempt < 220; attempt++) {
           const targetMoves = minMoves + randInt(Math.max(1, maxMoves - minMoves + 1));
           const attemptOccupied = new Set(occupied);
-          dragged = dragBlockFromTarget(targetCells[i], grid, attemptOccupied, size, targetMoves, minMoves, forbiddenColumns);
+          dragged = dragBlockFromTarget(targetCells[i], grid, attemptOccupied, placementBlocked, size, targetMoves, minMoves, forbiddenColumns);
           if (dragged !== null) {
             acceptedOccupied = attemptOccupied;
             break;
@@ -1055,25 +1275,26 @@
         }
         if (dragged === null) {
           const attemptOccupied = new Set(occupied);
-          dragged = searchDraggedPosition(targetCells[i], grid, attemptOccupied, size, minMoves, maxMoves, forbiddenColumns);
+          dragged = searchDraggedPosition(targetCells[i], grid, attemptOccupied, placementBlocked, size, minMoves, maxMoves, forbiddenColumns);
           if (dragged !== null) acceptedOccupied = attemptOccupied;
         }
         if (dragged === null || acceptedOccupied === null) return null;
         occupied.clear();
         acceptedOccupied.forEach((value) => occupied.add(value));
+        reserveInitialBlockSpace(placementBlocked, dragged.pos, size);
         blocks.push({ id: "c" + i, text: word.syllables[i], correct: true, pos: dragged.pos, solutionMoves: dragged.moves });
       }
       return blocks;
     }
 
-    function searchDraggedPosition(startPos, grid, occupied, size, minMoves, maxMoves, forbiddenColumns) {
+    function searchDraggedPosition(startPos, grid, occupied, placementBlocked, size, minMoves, maxMoves, forbiddenColumns) {
       const staticOccupied = new Set(occupied);
       staticOccupied.delete(String(startPos));
       const queue = [{ pos: startPos, depth: 0 }];
       const seen = new Set([String(startPos)]);
       for (let head = 0; head < queue.length; head++) {
         const current = queue[head];
-        if (current.depth >= minMoves && validDraggedPosition(current.pos, size, forbiddenColumns)) {
+        if (current.depth >= minMoves && validDraggedPosition(current.pos, size, forbiddenColumns) && !placementBlocked.has(String(current.pos))) {
           occupied.delete(String(startPos));
           occupied.add(String(current.pos));
           return { pos: current.pos, moves: current.depth };
@@ -1097,7 +1318,7 @@
       return null;
     }
 
-    function dragBlockFromTarget(startPos, grid, occupied, size, targetMoves, minMoves, forbiddenColumns) {
+    function dragBlockFromTarget(startPos, grid, occupied, placementBlocked, size, targetMoves, minMoves, forbiddenColumns) {
       let current = startPos;
       let moves = 0;
       for (let step = 0; step < targetMoves; step++) {
@@ -1117,7 +1338,7 @@
         });
 
         if (!options.length) {
-          return moves >= minMoves && validDraggedPosition(current, size, forbiddenColumns) ? { pos: current, moves } : null;
+          return moves >= minMoves && validDraggedPosition(current, size, forbiddenColumns) && !placementBlocked.has(String(current)) ? { pos: current, moves } : null;
         }
 
         const dir = chooseDragDirection(options, currentPos, forbiddenColumns);
@@ -1127,7 +1348,7 @@
         occupied.add(String(current));
         moves++;
       }
-      return moves >= minMoves && validDraggedPosition(current, size, forbiddenColumns) ? { pos: current, moves } : null;
+      return moves >= minMoves && validDraggedPosition(current, size, forbiddenColumns) && !placementBlocked.has(String(current)) ? { pos: current, moves } : null;
     }
 
     function chooseDragDirection(options, currentPos, forbiddenColumns) {
@@ -1154,9 +1375,23 @@
         !forbiddenColumns.has(point.x);
     }
 
+    function blocksHaveInitialSpacing(blocks, size) {
+      for (let i = 0; i < blocks.length; i++) {
+        const a = posFromIdx(blocks[i].pos, size);
+        for (let j = i + 1; j < blocks.length; j++) {
+          const b = posFromIdx(blocks[j].pos, size);
+          if (Math.abs(a.x - b.x) <= 1 && Math.abs(a.y - b.y) <= 1) return false;
+        }
+      }
+      return true;
+    }
+
     function verifyDraggedConstruction(candidate) {
       let moves = 0;
       if (candidate.blocks.filter((block) => block.correct).length !== candidate.word.syllables.length) {
+        return { solved: false, states: moves, depth: 0 };
+      }
+      if (!blocksHaveInitialSpacing(candidate.blocks, candidate.size)) {
         return { solved: false, states: moves, depth: 0 };
       }
       const distractors = candidate.blocks.filter((block) => !block.correct);
@@ -1208,6 +1443,23 @@
       return shuffle(blocks);
     }
 
+    function normalizeLevel() {
+      const level = Math.max(1, Math.min(4, Math.round(Number(levelSelect.value) || DEFAULT_SETTINGS.level)));
+      levelSelect.value = String(level);
+      return level;
+    }
+
+    function applyLevelPreset(level) {
+      const preset = LEVEL_PRESETS[level] || LEVEL_PRESETS[DEFAULT_SETTINGS.level];
+      lengthSelect.value = String(preset.length);
+      sizeSelect.value = String(preset.size);
+      wallCountSelect.value = String(preset.wallCount);
+      wallMinLengthSelect.value = String(preset.minWallLength);
+      wallLengthSelect.value = String(preset.maxWallLength);
+      dragMinSelect.value = String(preset.minSolutionMoves);
+      dragMaxSelect.value = String(preset.maxSolutionMoves);
+    }
+
     function normalizeBoardSize() {
       const raw = Number(sizeSelect.value);
       const size = Math.max(12, Math.min(20, Math.round(Number.isFinite(raw) ? raw : 12)));
@@ -1240,12 +1492,14 @@
     }
 
     function updateSettingLabels() {
+      const level = normalizeLevel();
       const length = Number(lengthSelect.value);
       const size = normalizeBoardSize();
       const wallCount = normalizeWallCount();
       const wallLengths = normalizeWallLengths();
       const dragMoves = normalizeDragMoves();
 
+      levelValue.textContent = "Level " + level;
       lengthValue.textContent = length === 4 ? "4+ syllables" : length + " syllable" + (length === 1 ? "" : "s");
       sizeValue.textContent = size + " x " + size;
       wallCountValue.textContent = wallCount + " wall" + (wallCount === 1 ? "" : "s");
@@ -1259,6 +1513,7 @@
       const wallLengths = normalizeWallLengths();
       const dragMoves = normalizeDragMoves();
       return {
+        level: normalizeLevel(),
         length: Number(lengthSelect.value),
         size: normalizeBoardSize(),
         wallCount: normalizeWallCount(),
@@ -1271,6 +1526,7 @@
 
     function applySettings(settings) {
       const next = { ...DEFAULT_SETTINGS, ...settings };
+      levelSelect.value = String(Math.max(1, Math.min(4, Math.round(Number(next.level) || DEFAULT_SETTINGS.level))));
       lengthSelect.value = String(Math.max(1, Math.min(4, Math.round(Number(next.length) || DEFAULT_SETTINGS.length))));
       sizeSelect.value = String(next.size);
       wallCountSelect.value = String(next.wallCount);
@@ -1317,6 +1573,145 @@
       }
     }
 
+    function loadScore() {
+      if (typeof localStorage === "undefined") return;
+      try {
+        const stored = Number(localStorage.getItem(SCORE_STORAGE_KEY));
+        score = Number.isFinite(stored) && stored > 0 ? Math.floor(stored) : 0;
+      } catch (error) {
+        score = 0;
+      }
+      updateScoreDisplay();
+    }
+
+    function saveScore() {
+      if (typeof localStorage === "undefined") return;
+      try {
+        localStorage.setItem(SCORE_STORAGE_KEY, String(score));
+      } catch (error) {
+      }
+    }
+
+    function updateScoreDisplay() {
+      scoreValue.textContent = String(score);
+      characterPointsValue.textContent = String(score);
+      renderCharacterList();
+    }
+
+    function addScore(points) {
+      score += points;
+      saveScore();
+      updateScoreDisplay();
+    }
+
+    function resetScore() {
+      score = 0;
+      saveScore();
+      updateScoreDisplay();
+    }
+
+    function loadCharacterState() {
+      if (typeof localStorage === "undefined") {
+        renderCharacterList();
+        return;
+      }
+      try {
+        const stored = JSON.parse(localStorage.getItem(CHARACTER_STORAGE_KEY) || "{}");
+        const validIds = new Set(CHARACTER_OPTIONS.map((character) => character.id));
+        unlockedCharacters = Array.isArray(stored.unlocked)
+          ? stored.unlocked.filter((id) => validIds.has(id))
+          : ["blue"];
+        if (!unlockedCharacters.includes("blue")) unlockedCharacters.unshift("blue");
+        currentCharacterId = validIds.has(stored.selected) && unlockedCharacters.includes(stored.selected)
+          ? stored.selected
+          : "blue";
+      } catch (error) {
+        unlockedCharacters = ["blue"];
+        currentCharacterId = "blue";
+      }
+      saveCharacterState();
+      renderCharacterList();
+    }
+
+    function saveCharacterState() {
+      if (typeof localStorage === "undefined") return;
+      try {
+        localStorage.setItem(CHARACTER_STORAGE_KEY, JSON.stringify({
+          selected: currentCharacterId,
+          unlocked: unlockedCharacters
+        }));
+      } catch (error) {
+      }
+    }
+
+    function isCharacterUnlocked(id) {
+      return unlockedCharacters.includes(id);
+    }
+
+    function buyOrSelectCharacter(id) {
+      const character = CHARACTER_OPTIONS.find((option) => option.id === id);
+      if (!character) return;
+      if (!isCharacterUnlocked(id)) {
+        if (score < character.cost) return;
+        score -= character.cost;
+        unlockedCharacters.push(id);
+        saveScore();
+      }
+      currentCharacterId = id;
+      saveCharacterState();
+      updateScoreDisplay();
+      draw();
+    }
+
+    function showCharacterPreview(id) {
+      const character = CHARACTER_OPTIONS.find((option) => option.id === id) ||
+        CHARACTER_OPTIONS.find((option) => option.id === currentCharacterId) ||
+        CHARACTER_OPTIONS[0];
+      if (!character) return;
+      characterFeatureImage.src = character.src;
+      characterFeatureImage.alt = character.name;
+      characterFeatureName.textContent = character.name;
+    }
+
+    function renderCharacterList() {
+      if (!characterList) return;
+      characterList.innerHTML = "";
+      showCharacterPreview(currentCharacterId);
+      CHARACTER_OPTIONS.forEach((character) => {
+        const unlocked = isCharacterUnlocked(character.id);
+        const selected = currentCharacterId === character.id;
+        const card = document.createElement("div");
+        card.className = "character-card" + (selected ? " selected" : "");
+        card.dataset.characterId = character.id;
+
+        const image = document.createElement("img");
+        image.className = "character-preview";
+        image.src = character.src;
+        image.alt = character.name;
+        card.appendChild(image);
+
+        const name = document.createElement("div");
+        name.className = "character-name";
+        name.textContent = character.name;
+        card.appendChild(name);
+
+        const cost = document.createElement("div");
+        cost.className = "character-cost";
+        cost.textContent = unlocked ? "Unlocked" : character.cost + " points";
+        card.appendChild(cost);
+
+        const action = document.createElement("button");
+        action.className = "character-action";
+        action.type = "button";
+        action.dataset.characterId = character.id;
+        action.textContent = selected ? "Selected" : unlocked ? "Select" : "Buy";
+        action.disabled = selected || (!unlocked && score < character.cost);
+        card.appendChild(action);
+
+        characterList.appendChild(card);
+      });
+    }
+
     function applySettingChange() {
       updateSettingLabels();
       saveSettings();
@@ -1328,9 +1723,21 @@
       saveSettings();
     }
 
-    function resetSettingsToDefaults() {
-      applySettings(DEFAULT_SETTINGS);
+    function handleLevelInput() {
+      applyLevelPreset(normalizeLevel());
+      updateSettingLabels();
       saveSettings();
+    }
+
+    function applyLevelChange() {
+      handleLevelInput();
+      loadNewLevel();
+    }
+
+    function resetSettingsToDefaults() {
+      applySettings({ ...DEFAULT_SETTINGS, ...LEVEL_PRESETS[DEFAULT_SETTINGS.level] });
+      saveSettings();
+      resetScore();
       loadNewLevel();
     }
 
@@ -1436,9 +1843,10 @@
           if (!grid) continue;
           if (countInteriorWalls(grid) < 1) continue;
           const occupied = new Set(targetCells.map((cell) => String(cell)));
-          const distractors = createDistractorBlocks(word, distractorCount(word.syllables.length, size), grid, occupied, size, targetY + 2, targetColumns);
+          const placementBlocked = new Set(occupied);
+          const distractors = createDistractorBlocks(word, distractorCount(word.syllables.length, size), grid, occupied, placementBlocked, size, targetY + 2, targetColumns);
           if (!distractors) continue;
-          const blocks = createDraggedSolutionBlocks(word, grid, occupied, size, targetCells, minMoves, maxMoves, targetColumns);
+          const blocks = createDraggedSolutionBlocks(word, grid, occupied, placementBlocked, size, targetCells, minMoves, maxMoves, targetColumns);
           if (!blocks) continue;
           const player = findFreeCell(grid, occupied, size, targetY + 2);
           if (player === null) continue;
@@ -1478,9 +1886,10 @@
         if (!grid) continue;
         if (countInteriorWalls(grid) < 1) continue;
         const occupied = new Set(targetCells.map((cell) => String(cell)));
-        const distractors = createDistractorBlocks(word, distractorCount(word.syllables.length, size), grid, occupied, size, targetY + 2, targetColumns);
+        const placementBlocked = new Set(occupied);
+        const distractors = createDistractorBlocks(word, distractorCount(word.syllables.length, size), grid, occupied, placementBlocked, size, targetY + 2, targetColumns);
         if (!distractors) continue;
-        const blocks = createDraggedSolutionBlocks(word, grid, occupied, size, targetCells, minMoves, maxMoves, targetColumns);
+        const blocks = createDraggedSolutionBlocks(word, grid, occupied, placementBlocked, size, targetCells, minMoves, maxMoves, targetColumns);
         if (!blocks) continue;
         const player = findFreeCell(grid, occupied, size, targetY + 2);
         if (player === null) continue;
@@ -1515,13 +1924,15 @@
     function generateEmergencyFallbackLevel(size, word, targetCells, startX, targetY, wallCount, minWallLength, maxWallLength, minMoves, maxMoves, reserved, targetColumns) {
       const grid = createSingleWallGrid(size, reserved) || createBorderGrid(size);
       const occupied = new Set(targetCells.map((cell) => String(cell)));
-      const distractors = createDistractorBlocks(word, distractorCount(word.syllables.length, size), grid, occupied, size, targetY + 2, targetColumns) || [];
+      const placementBlocked = new Set(occupied);
+      const distractors = createDistractorBlocks(word, distractorCount(word.syllables.length, size), grid, occupied, placementBlocked, size, targetY + 2, targetColumns) || [];
       const blocks = [];
       for (let i = 0; i < word.syllables.length; i++) {
-        const pos = findFreeCell(grid, occupied, size, Math.floor(size / 2), targetColumns);
+        const pos = findFreeCell(grid, placementBlocked, size, Math.floor(size / 2), targetColumns);
         if (pos === null) break;
         blocks.push({ id: "c" + i, text: word.syllables[i], correct: true, pos, solutionMoves: minMoves });
         occupied.add(String(pos));
+        reserveInitialBlockSpace(placementBlocked, pos, size);
       }
       const player = findFreeCell(grid, occupied, size, targetY + 2, targetColumns) || idx(1, size - 2, size);
       const fallback = {
@@ -1681,6 +2092,7 @@
       const correct = isGoal(level, state.blocks.map((block) => block.pos));
       if (correct) {
         won = true;
+        addScore(level.word.syllables.length);
         startFeedback("correct");
         playFanfare();
         setTimeout(() => loadNewLevel(), 2000);
@@ -1965,8 +2377,9 @@
       });
 
       const player = playerDrawPosition(size);
-      if (sprites.player.ready) {
-        drawPlayerSprite(player, tile);
+      const playerSprite = currentPlayerSprite();
+      if (playerSprite.ready) {
+        drawPlayerSprite(player, tile, playerSprite);
       } else {
         const cx = player.x * tile + tile / 2;
         const cy = player.y * tile + tile / 2;
@@ -1985,14 +2398,18 @@
       }
     }
 
-    function drawPlayerSprite(player, tile) {
+    function currentPlayerSprite() {
+      return characterSprites[currentCharacterId] || characterSprites.blue;
+    }
+
+    function drawPlayerSprite(player, tile, sprite) {
       const cx = player.x * tile + tile / 2;
       const cy = player.y * tile + tile / 2;
       const size = tile * .96;
       ctx.save();
       ctx.translate(cx, cy);
       ctx.rotate(playerFacing);
-      ctx.drawImage(sprites.player.image, -size / 2, -size / 2, size, size);
+      ctx.drawImage(sprite.image, -size / 2, -size / 2, size, size);
       ctx.restore();
     }
 
@@ -2142,19 +2559,51 @@
       if (focusButton) settingsButton.focus();
     }
 
+    function closeCharactersPanel(focusButton = false) {
+      charactersPanel.hidden = true;
+      charactersButton.setAttribute("aria-expanded", "false");
+      if (focusButton) charactersButton.focus();
+    }
+
     speakButton.addEventListener("click", speakWord);
     settingsButton.addEventListener("click", () => {
       const opening = settingsPanel.hidden;
       settingsPanel.hidden = !opening;
       settingsButton.setAttribute("aria-expanded", String(opening));
+      if (opening) closeCharactersPanel();
+    });
+    charactersButton.addEventListener("click", () => {
+      const opening = charactersPanel.hidden;
+      charactersPanel.hidden = !opening;
+      charactersButton.setAttribute("aria-expanded", String(opening));
+      if (opening) closeSettingsPanel();
     });
     closeSettingsButton.addEventListener("click", () => {
       closeSettingsPanel(true);
     });
+    closeCharactersButton.addEventListener("click", () => {
+      closeCharactersPanel(true);
+    });
     document.addEventListener("pointerdown", (event) => {
-      if (settingsPanel.hidden) return;
-      if (settingsPanel.contains(event.target) || settingsButton.contains(event.target)) return;
-      closeSettingsPanel();
+      const inSettings = settingsPanel.contains(event.target) || settingsButton.contains(event.target);
+      const inCharacters = charactersPanel.contains(event.target) || charactersButton.contains(event.target);
+      if (!settingsPanel.hidden && !inSettings) closeSettingsPanel();
+      if (!charactersPanel.hidden && !inCharacters) closeCharactersPanel();
+    });
+    characterList.addEventListener("click", (event) => {
+      const button = event.target.closest("[data-character-id]");
+      if (!button) return;
+      buyOrSelectCharacter(button.dataset.characterId);
+    });
+    characterList.addEventListener("mouseover", (event) => {
+      const card = event.target.closest(".character-card");
+      if (!card) return;
+      showCharacterPreview(card.dataset.characterId);
+    });
+    characterList.addEventListener("focusin", (event) => {
+      const card = event.target.closest(".character-card");
+      if (!card) return;
+      showCharacterPreview(card.dataset.characterId);
     });
     settingsResetButton.addEventListener("click", resetSettingsToDefaults);
     settingsGenerateButton.addEventListener("click", () => {
@@ -2167,6 +2616,7 @@
       loadNewLevel();
     });
     undoButton.addEventListener("click", undoLastMove);
+    levelSelect.addEventListener("input", handleLevelInput);
     lengthSelect.addEventListener("input", handleSettingInput);
     sizeSelect.addEventListener("input", handleSettingInput);
     wallCountSelect.addEventListener("input", handleSettingInput);
@@ -2174,6 +2624,7 @@
     wallLengthSelect.addEventListener("input", handleSettingInput);
     dragMinSelect.addEventListener("input", handleSettingInput);
     dragMaxSelect.addEventListener("input", handleSettingInput);
+    levelSelect.addEventListener("change", applyLevelChange);
     lengthSelect.addEventListener("change", applySettingChange);
     sizeSelect.addEventListener("change", applySettingChange);
     wallCountSelect.addEventListener("change", applySettingChange);
@@ -2200,15 +2651,26 @@
         if (maxMoves !== undefined) dragMaxSelect.value = String(maxMoves);
         updateSettingLabels();
       },
+      setLevel(level) {
+        levelSelect.value = String(level);
+        handleLevelInput();
+      },
+      settings() {
+        return currentSettings();
+      },
       current() {
-        return { level, state, won, moves };
-      }
+        return { level, state, won, moves, score, currentCharacterId, unlockedCharacters: unlockedCharacters.slice() };
+      },
+      buyOrSelectCharacter,
+      loadCharacterState
     };
 
     async function initializeGame() {
       await loadWords();
       loadSavedSettings();
       loadWordCycles();
+      loadScore();
+      loadCharacterState();
       updateSettingLabels();
       loadNewLevel();
     }
