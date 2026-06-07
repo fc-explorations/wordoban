@@ -809,7 +809,7 @@
       { x: 0, y: -1 }
     ];
 
-    const GENERATION_ATTEMPTS = 14;
+    const GENERATION_ATTEMPTS = 36;
     const GENERATION_SOLVER_LIMIT = 8000;
     const FLOOR_PALETTES = [
       { base: "#f7fbf4", soft: "#edf8ee", accent: "#e6f3f7", grid: "#b9d7d1" },
@@ -1099,6 +1099,11 @@
       return null;
     }
 
+    function minimumAcceptedWallCount(requestedWallCount) {
+      if (requestedWallCount <= 1) return 1;
+      return Math.max(2, Math.ceil(requestedWallCount * 0.6));
+    }
+
     function countInteriorWalls(grid) {
       let count = 0;
       for (let y = 1; y < grid.length - 1; y++) {
@@ -1170,8 +1175,9 @@
       }
       reserved.add(cellKey(Math.floor(size / 2), size - 2));
       const targetColumns = new Set(syllables.map((_, i) => startX + i));
+      const minimumWallCount = minimumAcceptedWallCount(wallCount);
 
-      for (let effectiveWallCount = wallCount; effectiveWallCount >= 1; effectiveWallCount--) {
+      for (let effectiveWallCount = wallCount; effectiveWallCount >= minimumWallCount; effectiveWallCount--) {
         for (let attempt = 0; attempt < GENERATION_ATTEMPTS; attempt++) {
           const grid = createGrid(size, reserved, effectiveWallCount, minWallLength, maxWallLength);
           if (!grid) continue;
@@ -1829,7 +1835,8 @@
     }
 
     function generateFallbackLevel(size, word, targetCells, startX, targetY, wallCount, minWallLength, maxWallLength, minMoves, maxMoves, reserved, targetColumns) {
-      for (let effectiveWallCount = wallCount; effectiveWallCount >= 1; effectiveWallCount--) {
+      const minimumWallCount = minimumAcceptedWallCount(wallCount);
+      for (let effectiveWallCount = wallCount; effectiveWallCount >= minimumWallCount; effectiveWallCount--) {
         for (let attempt = 0; attempt < GENERATION_ATTEMPTS; attempt++) {
           let grid = createGrid(size, reserved, effectiveWallCount, minWallLength, maxWallLength);
           if (!grid) continue;
@@ -1875,8 +1882,9 @@
     }
 
     function generateSimpleFallbackLevel(size, word, targetCells, startX, targetY, wallCount, minWallLength, maxWallLength, minMoves, maxMoves, reserved, targetColumns) {
+      const minimumWallCount = minimumAcceptedWallCount(wallCount);
       for (let attempt = 0; attempt < 360; attempt++) {
-        const grid = createSingleWallGrid(size, reserved);
+        const grid = createGrid(size, reserved, minimumWallCount, minWallLength, maxWallLength);
         if (!grid) continue;
         if (countInteriorWalls(grid) < 1) continue;
         const occupied = new Set(targetCells.map((cell) => String(cell)));
@@ -1897,7 +1905,7 @@
           targetColumns,
           blocks: shuffle(blocks.concat(distractors)),
           player,
-          wallCount: 1,
+          wallCount: minimumWallCount,
           requestedWallCount: wallCount,
           minWallLength,
           maxWallLength,
@@ -1916,7 +1924,9 @@
     }
 
     function generateEmergencyFallbackLevel(size, word, targetCells, startX, targetY, wallCount, minWallLength, maxWallLength, minMoves, maxMoves, reserved, targetColumns) {
-      const grid = createSingleWallGrid(size, reserved) || createBorderGrid(size);
+      const minimumWallCount = minimumAcceptedWallCount(wallCount);
+      const minimumGrid = createGrid(size, reserved, minimumWallCount, minWallLength, maxWallLength);
+      const grid = minimumGrid || createSingleWallGrid(size, reserved) || createBorderGrid(size);
       const occupied = new Set(targetCells.map((cell) => String(cell)));
       const placementBlocked = new Set(occupied);
       const distractors = createDistractorBlocks(word, distractorCount(word.syllables.length, size), grid, occupied, placementBlocked, size, targetY + 2, targetColumns) || [];
@@ -1939,7 +1949,7 @@
         targetColumns,
         blocks: shuffle(blocks.concat(distractors)),
         player,
-        wallCount: 1,
+        wallCount: minimumGrid ? minimumWallCount : 1,
         requestedWallCount: wallCount,
         minWallLength,
         maxWallLength,
