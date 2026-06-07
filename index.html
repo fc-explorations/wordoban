@@ -266,10 +266,34 @@
       <div class="control-group">
         <label for="sizeSelect">Board size</label>
         <select id="sizeSelect">
-          <option value="8" selected>8 x 8</option>
+          <option value="8">8 x 8</option>
           <option value="10">10 x 10</option>
-          <option value="12">12 x 12</option>
+          <option value="12" selected>12 x 12</option>
           <option value="14">14 x 14</option>
+        </select>
+      </div>
+
+      <div class="control-group">
+        <label for="wallCountSelect">Wall segments</label>
+        <select id="wallCountSelect">
+          <option value="0">0 walls</option>
+          <option value="4">4 walls</option>
+          <option value="8" selected>8 walls</option>
+          <option value="12">12 walls</option>
+          <option value="16">16 walls</option>
+          <option value="20">20 walls</option>
+        </select>
+      </div>
+
+      <div class="control-group">
+        <label for="wallLengthSelect">Max wall length</label>
+        <select id="wallLengthSelect">
+          <option value="1">1 tile</option>
+          <option value="2">2 tiles</option>
+          <option value="3" selected>3 tiles</option>
+          <option value="4">4 tiles</option>
+          <option value="5">5 tiles</option>
+          <option value="6">6 tiles</option>
         </select>
       </div>
 
@@ -334,6 +358,8 @@
     const statusEl = document.getElementById("status");
     const lengthSelect = document.getElementById("lengthSelect");
     const sizeSelect = document.getElementById("sizeSelect");
+    const wallCountSelect = document.getElementById("wallCountSelect");
+    const wallLengthSelect = document.getElementById("wallLengthSelect");
     const speakButton = document.getElementById("speakButton");
     const resetButton = document.getElementById("resetButton");
     const newButton = document.getElementById("newButton");
@@ -396,7 +422,7 @@
       return Math.min(max + sizeBonus, min + randInt(max - min + 1) + sizeBonus);
     }
 
-    function createGrid(size, reserved) {
+    function createGrid(size, reserved, wallCount, maxWallLength) {
       const grid = Array.from({ length: size }, () => Array(size).fill(TILE.FLOOR));
       for (let y = 0; y < size; y++) {
         for (let x = 0; x < size; x++) {
@@ -406,21 +432,38 @@
         }
       }
 
-      const wallBudget = Math.floor(size * size * 0.045);
       let placed = 0;
       let attempts = 0;
-      while (placed < wallBudget && attempts < wallBudget * 18) {
+      const attemptLimit = Math.max(80, wallCount * 30);
+      while (placed < wallCount && attempts < attemptLimit) {
         attempts++;
-        const x = 1 + randInt(size - 2);
-        const y = 1 + randInt(size - 2);
-        if (reserved.has(cellKey(x, y))) continue;
-        if (grid[y][x] === TILE.WALL) continue;
-        if ((x + y) % 2 === 0 && Math.random() < 0.65) continue;
-        grid[y][x] = TILE.WALL;
+        const horizontal = Math.random() < 0.5;
+        const length = 1 + randInt(Math.max(1, maxWallLength));
+        const x = 1 + randInt(size - 2 - (horizontal ? length - 1 : 0));
+        const y = 1 + randInt(size - 2 - (horizontal ? 0 : length - 1));
+        const cells = [];
+        let blocked = false;
+
+        for (let i = 0; i < length; i++) {
+          const cx = x + (horizontal ? i : 0);
+          const cy = y + (horizontal ? 0 : i);
+          if (reserved.has(cellKey(cx, cy)) || grid[cy][cx] === TILE.WALL) {
+            blocked = true;
+            break;
+          }
+          cells.push({ x: cx, y: cy });
+        }
+        if (blocked) continue;
+
+        cells.forEach((cell) => {
+          grid[cell.y][cell.x] = TILE.WALL;
+        });
         if (floorIsConnected(grid)) {
           placed++;
         } else {
-          grid[y][x] = TILE.FLOOR;
+          cells.forEach((cell) => {
+            grid[cell.y][cell.x] = TILE.FLOOR;
+          });
         }
       }
       return grid;
@@ -458,6 +501,8 @@
 
     function generateLevel() {
       const size = Number(sizeSelect.value);
+      const wallCount = Number(wallCountSelect.value);
+      const maxWallLength = Number(wallLengthSelect.value);
       const wordOptions = getWordsForLength(lengthSelect.value);
       const word = chooseDifferentWord(wordOptions);
       const syllables = word.syllables;
@@ -474,7 +519,7 @@
       reserved.add(cellKey(Math.floor(size / 2), size - 2));
 
       for (let attempt = 0; attempt < 250; attempt++) {
-        const grid = createGrid(size, reserved);
+        const grid = createGrid(size, reserved, wallCount, maxWallLength);
         const blocks = [];
         const occupied = new Set(targetCells.map((cell) => "t" + cell));
 
@@ -508,7 +553,9 @@
           targetY,
           startX,
           blocks,
-          player
+          player,
+          wallCount,
+          maxWallLength
         };
         const solver = solveLevel(candidate, 70000);
         if (solver.solved) {
@@ -518,7 +565,7 @@
         }
       }
 
-      return generateFallbackLevel(size, word, targetCells, startX, targetY);
+      return generateFallbackLevel(size, word, targetCells, startX, targetY, wallCount, maxWallLength);
     }
 
     function chooseDifferentWord(options) {
@@ -545,7 +592,7 @@
       return cells.length ? sample(cells) : null;
     }
 
-    function generateFallbackLevel(size, word, targetCells, startX, targetY) {
+    function generateFallbackLevel(size, word, targetCells, startX, targetY, wallCount, maxWallLength) {
       const grid = Array.from({ length: size }, () => Array(size).fill(TILE.FLOOR));
       for (let y = 0; y < size; y++) {
         for (let x = 0; x < size; x++) {
@@ -575,7 +622,9 @@
         targetY,
         startX,
         blocks,
-        player: idx(Math.floor(size / 2), targetY + 3, size)
+        player: idx(Math.floor(size / 2), targetY + 3, size),
+        wallCount,
+        maxWallLength
       };
       const solver = solveLevel(fallback, 70000);
       fallback.solverStates = solver.states;
@@ -846,14 +895,18 @@
     newButton.addEventListener("click", loadNewLevel);
     lengthSelect.addEventListener("change", loadNewLevel);
     sizeSelect.addEventListener("change", loadNewLevel);
+    wallCountSelect.addEventListener("change", loadNewLevel);
+    wallLengthSelect.addEventListener("change", loadNewLevel);
     window.addEventListener("resize", draw);
 
     window.__wordobanTest = {
       generateLevel,
       solveLevel,
-      setSettings(length, size) {
+      setSettings(length, size, wallCount, maxWallLength) {
         lengthSelect.value = String(length);
         sizeSelect.value = String(size);
+        if (wallCount !== undefined) wallCountSelect.value = String(wallCount);
+        if (maxWallLength !== undefined) wallLengthSelect.value = String(maxWallLength);
       },
       current() {
         return { level, state, won, moves };
