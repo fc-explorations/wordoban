@@ -979,8 +979,14 @@
     function createDistractorBlocks(word, distractorTotal, grid, occupied, size, minY, forbiddenColumns = new Set()) {
       const blocks = [];
       const distractors = shuffle(word.distractors).slice(0, distractorTotal);
+      const requiredTop = Math.ceil(distractors.length / 2);
+      const topMaxY = Math.max(minY, Math.floor(size / 2) - 1);
       for (let i = 0; i < distractors.length; i++) {
-        const pos = findFreeCell(grid, occupied, size, minY, forbiddenColumns);
+        let pos = null;
+        if (i < requiredTop) {
+          pos = findFreeCellInRows(grid, occupied, size, minY, topMaxY, forbiddenColumns);
+        }
+        if (pos === null) pos = findFreeCell(grid, occupied, size, minY, forbiddenColumns);
         if (pos === null) return null;
         blocks.push({ id: "d" + i, text: distractors[i], correct: false, pos });
         occupied.add(String(pos));
@@ -1096,12 +1102,21 @@
 
     function validDraggedPosition(pos, size, forbiddenColumns = new Set()) {
       const point = posFromIdx(pos, size);
-      return point.x > 1 && point.y > 2 && point.x < size - 2 && point.y < size - 2 && !forbiddenColumns.has(point.x);
+      return point.x > 1 &&
+        point.y >= Math.floor(size / 2) &&
+        point.x < size - 2 &&
+        point.y < size - 2 &&
+        !forbiddenColumns.has(point.x);
     }
 
     function verifyDraggedConstruction(candidate) {
       let moves = 0;
       if (candidate.blocks.filter((block) => block.correct).length !== candidate.word.syllables.length) {
+        return { solved: false, states: moves, depth: 0 };
+      }
+      const distractors = candidate.blocks.filter((block) => !block.correct);
+      const topDistractors = distractors.filter((block) => posFromIdx(block.pos, candidate.size).y < Math.floor(candidate.size / 2));
+      if (topDistractors.length < Math.ceil(distractors.length / 2)) {
         return { solved: false, states: moves, depth: 0 };
       }
       for (const target of candidate.targetCells) {
@@ -1319,6 +1334,20 @@
       return cells.length ? sample(cells) : null;
     }
 
+    function findFreeCellInRows(grid, occupied, size, minY, maxY, forbiddenColumns = new Set()) {
+      const cells = [];
+      const startY = Math.max(2, minY);
+      const endY = Math.min(size - 3, maxY);
+      for (let y = startY; y <= endY; y++) {
+        for (let x = 2; x <= size - 3; x++) {
+          if (forbiddenColumns.has(x)) continue;
+          const pos = idx(x, y, size);
+          if (grid[y][x] === TILE.FLOOR && !occupied.has(String(pos))) cells.push(pos);
+        }
+      }
+      return cells.length ? sample(cells) : null;
+    }
+
     function findColumnFreeCell(grid, occupied, size, minY, column) {
       const cells = [];
       const startY = Math.max(3, minY);
@@ -1434,7 +1463,7 @@
       const distractors = createDistractorBlocks(word, distractorCount(word.syllables.length, size), grid, occupied, size, targetY + 2, targetColumns) || [];
       const blocks = [];
       for (let i = 0; i < word.syllables.length; i++) {
-        const pos = findFreeCell(grid, occupied, size, targetY + 3, targetColumns);
+        const pos = findFreeCell(grid, occupied, size, Math.floor(size / 2), targetColumns);
         if (pos === null) break;
         blocks.push({ id: "c" + i, text: word.syllables[i], correct: true, pos, solutionMoves: minMoves });
         occupied.add(String(pos));
