@@ -46,10 +46,8 @@
     }
 
     header {
-      display: flex;
-      align-items: end;
-      justify-content: space-between;
-      gap: 16px;
+      display: grid;
+      gap: 12px;
       border-bottom: 1px solid var(--line);
       padding-bottom: 14px;
     }
@@ -74,15 +72,13 @@
     }
 
     .score-pill {
-      margin-top: 7px;
       display: inline-flex;
       align-items: center;
       gap: 4px;
       color: var(--accent);
-      font-size: .88rem;
-      font-weight: 850;
+      min-height: 38px;
+      font-weight: 800;
       letter-spacing: 0;
-      opacity: .82;
     }
 
     .score-pill span:last-child {
@@ -93,8 +89,10 @@
     .toolbar-actions {
       display: flex;
       align-items: center;
+      justify-content: center;
       gap: 30px;
       flex-wrap: wrap;
+      width: 100%;
     }
 
     .board-wrap {
@@ -568,11 +566,6 @@
     }
 
     @media (max-width: 860px) {
-      header {
-        align-items: start;
-        flex-direction: column;
-      }
-
       aside {
         top: 86px;
         right: 12px;
@@ -599,12 +592,13 @@
       <div>
         <img class="logo" src="assets/logo.png" alt="Wordoban">
         <p class="subtitle">Hear the word, choose the right syllables, push them into the target row.</p>
-        <div class="score-pill" aria-live="polite">
+      </div>
+      <div class="toolbar-actions">
+        <div class="score-pill" aria-live="polite" aria-label="Points">
+          <span class="command-icon" aria-hidden="true">★</span>
           <span>Points</span>
           <span id="scoreValue">0</span>
         </div>
-      </div>
-      <div class="toolbar-actions">
         <button class="command-button" id="newButton" type="button">
           <span class="command-icon" aria-hidden="true">✦</span>
           <span>New</span>
