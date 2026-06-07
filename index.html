@@ -76,7 +76,7 @@
     .toolbar-actions {
       display: flex;
       align-items: center;
-      gap: 22px;
+      gap: 30px;
       flex-wrap: wrap;
     }
 
@@ -178,7 +178,7 @@
       display: inline-flex;
       align-items: center;
       justify-content: center;
-      gap: 8px;
+      gap: 4px;
       font-weight: 800;
       box-shadow: none;
     }
@@ -203,14 +203,18 @@
     }
 
     .setup-trigger {
-      width: 60px;
-      min-height: 60px;
+      width: auto;
+      min-height: 38px;
       border: 0;
       background: transparent;
       color: var(--accent);
-      font-size: 3.25rem;
+      font-size: 1rem;
       line-height: 1;
-      filter: drop-shadow(0 4px 6px rgba(47, 102, 179, .24));
+      filter: none;
+    }
+
+    .setup-trigger .command-icon {
+      font-size: 1.55rem;
     }
 
     .setup-trigger:hover {
@@ -390,7 +394,7 @@
       display: inline-flex;
       align-items: center;
       justify-content: center;
-      gap: 10px;
+      gap: 4px;
       padding: 0 16px;
     }
 
@@ -476,7 +480,7 @@
       <div class="toolbar-actions">
         <button class="command-button" id="newButton" type="button">
           <span class="command-icon" aria-hidden="true">✦</span>
-          <span>New Puzzle</span>
+          <span>New</span>
         </button>
         <button class="command-button" id="undoButton" type="button">
           <span class="command-icon" aria-hidden="true">↺</span>
@@ -488,9 +492,12 @@
             <path fill="none" stroke="currentColor" stroke-linecap="round" stroke-width="2.2" d="M16 9c.8.8 1.2 1.8 1.2 3s-.4 2.2-1.2 3"></path>
             <path fill="none" stroke="currentColor" stroke-linecap="round" stroke-width="2.2" d="M18.8 6.5c1.5 1.5 2.3 3.4 2.3 5.5s-.8 4-2.3 5.5"></path>
           </svg>
-          <span>Replay Word</span>
+          <span>Replay</span>
         </button>
-        <button class="icon-button setup-trigger" id="settingsButton" type="button" aria-label="Open setup" aria-expanded="false" aria-controls="settingsPanel">⚙</button>
+        <button class="command-button setup-trigger" id="settingsButton" type="button" aria-label="Open setup" aria-expanded="false" aria-controls="settingsPanel">
+          <span class="command-icon" aria-hidden="true">⚙</span>
+          <span>Setup</span>
+        </button>
       </div>
     </header>
 
@@ -830,7 +837,8 @@
 
     function createGrid(size, reserved, wallCount, minWallLength, maxWallLength) {
       const grid = createBorderGrid(size);
-      let placed = 0;
+      if (!placeCentralWall(grid, reserved, size)) return null;
+      let placed = 1;
       let attempts = 0;
       const attemptLimit = Math.max(180, wallCount * 80);
       while (placed < wallCount && attempts < attemptLimit) {
@@ -870,21 +878,26 @@
       return placed === wallCount ? grid : null;
     }
 
+    function placeCentralWall(grid, reserved, size) {
+      const length = 2 + randInt(3);
+      const y = Math.floor(size / 2);
+      const x = Math.floor((size - length) / 2);
+      const cells = [];
+      for (let i = 0; i < length; i++) {
+        const cx = x + i;
+        if (reserved.has(cellKey(cx, y)) || grid[y][cx] === TILE.WALL) return false;
+        cells.push({ x: cx, y });
+      }
+      cells.forEach((cell) => {
+        grid[cell.y][cell.x] = TILE.WALL;
+      });
+      return floorIsConnected(grid);
+    }
+
     function createSingleWallGrid(size, reserved) {
       const grid = createBorderGrid(size);
-      const cells = [];
-      for (let y = 3; y <= size - 3; y++) {
-        for (let x = 2; x <= size - 3; x++) {
-          if (!reserved.has(cellKey(x, y))) cells.push({ x, y });
-        }
-      }
-      shuffle(cells).some((cell) => {
-        grid[cell.y][cell.x] = TILE.WALL;
-        if (floorIsConnected(grid)) return true;
-        grid[cell.y][cell.x] = TILE.FLOOR;
-        return false;
-      });
-      return grid;
+      if (placeCentralWall(grid, reserved, size)) return grid;
+      return null;
     }
 
     function countInteriorWalls(grid) {
@@ -944,7 +957,8 @@
       const maxWallLength = Number(wallLengthSelect.value);
       const dragMoves = normalizeDragMoves();
       const wordOptions = getWordsForLength(lengthSelect.value);
-      const word = forcedWord || chooseNextWord(wordOptions, lengthSelect.value);
+      const wordChoice = forcedWord ? null : chooseNextWord(wordOptions, lengthSelect.value);
+      const word = forcedWord || wordChoice.word;
       const syllables = word.syllables;
       const targetY = 1;
       const startX = Math.floor((size - syllables.length) / 2);
@@ -952,9 +966,8 @@
 
       const reserved = new Set();
       for (let i = 0; i < syllables.length; i++) {
-        for (let y = targetY; y <= size - 3; y++) {
-          reserved.add(cellKey(startX + i, y));
-        }
+        reserved.add(cellKey(startX + i, targetY));
+        reserved.add(cellKey(startX + i, targetY + 1));
       }
       reserved.add(cellKey(Math.floor(size / 2), size - 2));
       const targetColumns = new Set(syllables.map((_, i) => startX + i));
@@ -991,7 +1004,8 @@
             minWallLength,
             maxWallLength,
             minSolutionMoves: dragMoves.min,
-            maxSolutionMoves: dragMoves.max
+            maxSolutionMoves: dragMoves.max,
+            wordChoice
           };
           const solver = verifyDraggedConstruction(candidate);
           if (solver.solved) {
@@ -1002,7 +1016,9 @@
         }
       }
 
-      return generateFallbackLevel(size, word, targetCells, startX, targetY, wallCount, minWallLength, maxWallLength, dragMoves.min, dragMoves.max, reserved, targetColumns);
+      const fallback = generateFallbackLevel(size, word, targetCells, startX, targetY, wallCount, minWallLength, maxWallLength, dragMoves.min, dragMoves.max, reserved, targetColumns);
+      fallback.wordChoice = wordChoice;
+      return fallback;
     }
 
     function createDistractorBlocks(word, distractorTotal, grid, occupied, size, minY, forbiddenColumns = new Set()) {
@@ -1324,17 +1340,25 @@
       let cycle = wordCycles[key];
       if (!cycle || cycle.signature !== signature || !Array.isArray(cycle.order)) {
         cycle = createWordCycle(options, signature);
+        wordCycles[key] = cycle;
       }
       if (cycle.pointer >= cycle.order.length) {
         cycle = createWordCycle(options, signature, cycle.lastWord);
+        wordCycles[key] = cycle;
       }
 
       const wordName = cycle.order[cycle.pointer];
+      const word = options.find((entry) => entry.word === wordName) || options[0];
+      return { key, cycle, wordName: word.word, word };
+    }
+
+    function commitWordChoice(choice) {
+      if (!choice) return;
+      const cycle = choice.cycle;
       cycle.pointer++;
-      cycle.lastWord = wordName;
-      wordCycles[key] = cycle;
+      cycle.lastWord = choice.wordName;
+      wordCycles[choice.key] = cycle;
       saveWordCycles();
-      return options.find((entry) => entry.word === wordName) || options[0];
     }
 
     function createWordCycle(options, signature, avoidFirstWord = "") {
@@ -1409,6 +1433,7 @@
           let grid = createGrid(size, reserved, effectiveWallCount, minWallLength, maxWallLength);
           if (!grid) continue;
           if (countInteriorWalls(grid) < 1) grid = createSingleWallGrid(size, reserved);
+          if (!grid) continue;
           if (countInteriorWalls(grid) < 1) continue;
           const occupied = new Set(targetCells.map((cell) => String(cell)));
           const distractors = createDistractorBlocks(word, distractorCount(word.syllables.length, size), grid, occupied, size, targetY + 2, targetColumns);
@@ -1450,6 +1475,7 @@
     function generateSimpleFallbackLevel(size, word, targetCells, startX, targetY, wallCount, minWallLength, maxWallLength, minMoves, maxMoves, reserved, targetColumns) {
       for (let attempt = 0; attempt < 360; attempt++) {
         const grid = createSingleWallGrid(size, reserved);
+        if (!grid) continue;
         if (countInteriorWalls(grid) < 1) continue;
         const occupied = new Set(targetCells.map((cell) => String(cell)));
         const distractors = createDistractorBlocks(word, distractorCount(word.syllables.length, size), grid, occupied, size, targetY + 2, targetColumns);
@@ -1487,7 +1513,7 @@
     }
 
     function generateEmergencyFallbackLevel(size, word, targetCells, startX, targetY, wallCount, minWallLength, maxWallLength, minMoves, maxMoves, reserved, targetColumns) {
-      const grid = createSingleWallGrid(size, reserved);
+      const grid = createSingleWallGrid(size, reserved) || createBorderGrid(size);
       const occupied = new Set(targetCells.map((cell) => String(cell)));
       const distractors = createDistractorBlocks(word, distractorCount(word.syllables.length, size), grid, occupied, size, targetY + 2, targetColumns) || [];
       const blocks = [];
@@ -1668,6 +1694,8 @@
       feedback = null;
       undoStack = [];
       level = generateLevel(forcedWord);
+      commitWordChoice(level.wordChoice);
+      delete level.wordChoice;
       level.floorPalette = chooseFloorPalette();
       initialState = {
         player: level.player,
