@@ -17,6 +17,7 @@
       --block: #3c7f78;
       --distractor: #b45d4f;
       --player: #2f66b3;
+      --accent: #2f66b3;
       --focus: #111827;
       font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
     }
@@ -165,6 +166,22 @@
       font-size: 1.15rem;
     }
 
+    .setup-trigger {
+      width: 60px;
+      min-height: 60px;
+      border: 0;
+      background: transparent;
+      color: var(--accent);
+      font-size: 3.25rem;
+      line-height: 1;
+      filter: drop-shadow(0 4px 6px rgba(47, 102, 179, .24));
+    }
+
+    .setup-trigger:hover {
+      color: #25599f;
+      background: transparent;
+    }
+
     .control-group {
       display: grid;
       gap: 3px;
@@ -215,7 +232,7 @@
       display: flex;
       align-items: center;
       gap: 8px;
-      color: #2f66b3;
+      color: var(--accent);
       font-size: .82rem;
       font-weight: 900;
       letter-spacing: .03em;
@@ -229,15 +246,15 @@
       place-items: center;
       border-radius: 10px;
       background: #edf4ff;
-      color: #2f66b3;
+      color: var(--accent);
       box-shadow: inset 0 0 0 1px rgba(47, 102, 179, .18);
     }
 
     .section-icon.word {
       border-radius: 50%;
-      background: #fbf3ff;
-      color: #8a47bd;
-      box-shadow: inset 0 0 0 2px rgba(138, 71, 189, .28);
+      background: #edf4ff;
+      color: var(--accent);
+      box-shadow: inset 0 0 0 2px rgba(47, 102, 179, .24);
       font-weight: 900;
     }
 
@@ -248,9 +265,9 @@
 
     .section-icon.solution {
       border-radius: 50%;
-      background: #effaf4;
-      color: #2f9b63;
-      box-shadow: inset 0 0 0 2px rgba(47, 155, 99, .28);
+      background: #edf4ff;
+      color: var(--accent);
+      box-shadow: inset 0 0 0 2px rgba(47, 102, 179, .24);
     }
 
     .range-labels {
@@ -275,8 +292,8 @@
     }
 
     button.success-action {
-      border-color: #39a56b;
-      background: #39a56b;
+      border-color: var(--accent);
+      background: var(--accent);
       color: #fff;
       font-weight: 850;
     }
@@ -429,7 +446,7 @@
           </svg>
           <span>Replay Word</span>
         </button>
-        <button class="icon-button" id="settingsButton" type="button" aria-label="Open setup" aria-expanded="false" aria-controls="settingsPanel">⚙</button>
+        <button class="icon-button setup-trigger" id="settingsButton" type="button" aria-label="Open setup" aria-expanded="false" aria-controls="settingsPanel">⚙</button>
       </div>
     </header>
 
@@ -571,10 +588,11 @@
       { x: 0, y: -1 }
     ];
 
-    const GENERATION_ATTEMPTS = 6;
+    const GENERATION_ATTEMPTS = 14;
     const GENERATION_SOLVER_LIMIT = 8000;
     const FLOOR_PALETTE = { base: "#f7fbf4", soft: "#edf8ee", accent: "#e6f3f7", grid: "#b9d7d1" };
     const SETTINGS_STORAGE_KEY = "wordoban.settings";
+    const WORD_CYCLE_STORAGE_KEY = "wordoban.wordCycles";
     const DEFAULT_SETTINGS = {
       length: 2,
       size: 12,
@@ -615,7 +633,7 @@
     let state = null;
     let moves = 0;
     let won = false;
-    let lastWordKey = "";
+    let wordCycles = {};
     let feedback = null;
     const sprites = {
       block: loadSprite("assets/block.png"),
@@ -742,7 +760,7 @@
       const grid = createBorderGrid(size);
       let placed = 0;
       let attempts = 0;
-      const attemptLimit = Math.max(80, wallCount * 30);
+      const attemptLimit = Math.max(180, wallCount * 80);
       while (placed < wallCount && attempts < attemptLimit) {
         attempts++;
         const horizontal = Math.random() < 0.5;
@@ -777,7 +795,7 @@
           });
         }
       }
-      return grid;
+      return placed === wallCount ? grid : null;
     }
 
     function createSingleWallGrid(size, reserved) {
@@ -854,8 +872,7 @@
       const maxWallLength = Number(wallLengthSelect.value);
       const dragMoves = normalizeDragMoves();
       const wordOptions = getWordsForLength(lengthSelect.value);
-      const word = forcedWord || chooseDifferentWord(wordOptions);
-      lastWordKey = word.word;
+      const word = forcedWord || chooseNextWord(wordOptions, lengthSelect.value);
       const syllables = word.syllables;
       const targetY = 1;
       const startX = Math.floor((size - syllables.length) / 2);
@@ -863,20 +880,24 @@
 
       const reserved = new Set();
       for (let i = 0; i < syllables.length; i++) {
-        reserved.add(cellKey(startX + i, targetY));
+        for (let y = targetY; y <= size - 3; y++) {
+          reserved.add(cellKey(startX + i, y));
+        }
       }
       reserved.add(cellKey(Math.floor(size / 2), size - 2));
+      const targetColumns = new Set(syllables.map((_, i) => startX + i));
 
       for (let effectiveWallCount = wallCount; effectiveWallCount >= 1; effectiveWallCount--) {
         for (let attempt = 0; attempt < GENERATION_ATTEMPTS; attempt++) {
           const grid = createGrid(size, reserved, effectiveWallCount, minWallLength, maxWallLength);
+          if (!grid) continue;
           if (countInteriorWalls(grid) < 1) continue;
           const occupied = new Set(targetCells.map((cell) => String(cell)));
 
           const count = distractorCount(syllables.length, size);
-          const distractors = createDistractorBlocks(word, count, grid, occupied, size, targetY + 2);
+          const distractors = createDistractorBlocks(word, count, grid, occupied, size, targetY + 2, targetColumns);
           if (!distractors) continue;
-          const blocks = createDraggedSolutionBlocks(word, grid, occupied, size, targetCells, dragMoves.min, dragMoves.max);
+          const blocks = createDraggedSolutionBlocks(word, grid, occupied, size, targetCells, dragMoves.min, dragMoves.max, targetColumns);
           if (!blocks) continue;
 
           const player = findFreeCell(grid, occupied, size, targetY + 2);
@@ -890,6 +911,7 @@
             targetCells,
             targetY,
             startX,
+            targetColumns,
             blocks: shuffle(blocks.concat(distractors)),
             player,
             wallCount: effectiveWallCount,
@@ -908,14 +930,14 @@
         }
       }
 
-      return generateFallbackLevel(size, word, targetCells, startX, targetY, wallCount, minWallLength, maxWallLength, dragMoves.min, dragMoves.max, reserved);
+      return generateFallbackLevel(size, word, targetCells, startX, targetY, wallCount, minWallLength, maxWallLength, dragMoves.min, dragMoves.max, reserved, targetColumns);
     }
 
-    function createDistractorBlocks(word, distractorTotal, grid, occupied, size, minY) {
+    function createDistractorBlocks(word, distractorTotal, grid, occupied, size, minY, forbiddenColumns = new Set()) {
       const blocks = [];
       const distractors = shuffle(word.distractors).slice(0, distractorTotal);
       for (let i = 0; i < distractors.length; i++) {
-        const pos = findFreeCell(grid, occupied, size, minY);
+        const pos = findFreeCell(grid, occupied, size, minY, forbiddenColumns);
         if (pos === null) return null;
         blocks.push({ id: "d" + i, text: distractors[i], correct: false, pos });
         occupied.add(String(pos));
@@ -923,18 +945,65 @@
       return blocks;
     }
 
-    function createDraggedSolutionBlocks(word, grid, occupied, size, targetCells, minMoves, maxMoves) {
+    function createDraggedSolutionBlocks(word, grid, occupied, size, targetCells, minMoves, maxMoves, forbiddenColumns = new Set()) {
       const blocks = [];
       for (let i = 0; i < word.syllables.length; i++) {
-        const targetMoves = minMoves + randInt(Math.max(1, maxMoves - minMoves + 1));
-        const dragged = dragBlockFromTarget(targetCells[i], grid, occupied, size, targetMoves, minMoves);
-        if (dragged === null) return null;
+        let dragged = null;
+        let acceptedOccupied = null;
+        for (let attempt = 0; attempt < 220; attempt++) {
+          const targetMoves = minMoves + randInt(Math.max(1, maxMoves - minMoves + 1));
+          const attemptOccupied = new Set(occupied);
+          dragged = dragBlockFromTarget(targetCells[i], grid, attemptOccupied, size, targetMoves, minMoves, forbiddenColumns);
+          if (dragged !== null) {
+            acceptedOccupied = attemptOccupied;
+            break;
+          }
+        }
+        if (dragged === null) {
+          const attemptOccupied = new Set(occupied);
+          dragged = searchDraggedPosition(targetCells[i], grid, attemptOccupied, size, minMoves, maxMoves, forbiddenColumns);
+          if (dragged !== null) acceptedOccupied = attemptOccupied;
+        }
+        if (dragged === null || acceptedOccupied === null) return null;
+        occupied.clear();
+        acceptedOccupied.forEach((value) => occupied.add(value));
         blocks.push({ id: "c" + i, text: word.syllables[i], correct: true, pos: dragged.pos, solutionMoves: dragged.moves });
       }
       return blocks;
     }
 
-    function dragBlockFromTarget(startPos, grid, occupied, size, targetMoves, minMoves) {
+    function searchDraggedPosition(startPos, grid, occupied, size, minMoves, maxMoves, forbiddenColumns) {
+      const staticOccupied = new Set(occupied);
+      staticOccupied.delete(String(startPos));
+      const queue = [{ pos: startPos, depth: 0 }];
+      const seen = new Set([String(startPos)]);
+      for (let head = 0; head < queue.length; head++) {
+        const current = queue[head];
+        if (current.depth >= minMoves && validDraggedPosition(current.pos, size, forbiddenColumns)) {
+          occupied.delete(String(startPos));
+          occupied.add(String(current.pos));
+          return { pos: current.pos, moves: current.depth };
+        }
+        if (current.depth >= maxMoves) continue;
+        const currentPos = posFromIdx(current.pos, size);
+        for (const dir of DIRS) {
+          const nextX = currentPos.x + dir.x;
+          const nextY = currentPos.y + dir.y;
+          const standX = currentPos.x + dir.x * 2;
+          const standY = currentPos.y + dir.y * 2;
+          if (nextX <= 1 || nextY <= 0 || nextX >= size - 2 || nextY >= size - 2) continue;
+          if (!isFloor({ grid }, nextX, nextY) || !isFloor({ grid }, standX, standY)) continue;
+          const next = idx(nextX, nextY, size);
+          const stand = idx(standX, standY, size);
+          if (staticOccupied.has(String(next)) || staticOccupied.has(String(stand)) || seen.has(String(next))) continue;
+          seen.add(String(next));
+          queue.push({ pos: next, depth: current.depth + 1 });
+        }
+      }
+      return null;
+    }
+
+    function dragBlockFromTarget(startPos, grid, occupied, size, targetMoves, minMoves, forbiddenColumns) {
       let current = startPos;
       let moves = 0;
       for (let step = 0; step < targetMoves; step++) {
@@ -954,22 +1023,37 @@
         });
 
         if (!options.length) {
-          return moves >= minMoves && validDraggedPosition(current, size) ? { pos: current, moves } : null;
+          return moves >= minMoves && validDraggedPosition(current, size, forbiddenColumns) ? { pos: current, moves } : null;
         }
 
-        const dir = sample(options);
+        const dir = chooseDragDirection(options, currentPos, forbiddenColumns);
         const next = idx(currentPos.x + dir.x, currentPos.y + dir.y, size);
         occupied.delete(String(current));
         current = next;
         occupied.add(String(current));
         moves++;
       }
-      return moves >= minMoves && validDraggedPosition(current, size) ? { pos: current, moves } : null;
+      return moves >= minMoves && validDraggedPosition(current, size, forbiddenColumns) ? { pos: current, moves } : null;
     }
 
-    function validDraggedPosition(pos, size) {
+    function chooseDragDirection(options, currentPos, forbiddenColumns) {
+      const scored = options.map((dir) => {
+        const nextX = currentPos.x + dir.x;
+        const nextY = currentPos.y + dir.y;
+        let score = Math.random();
+        if (!forbiddenColumns.has(nextX)) score += 8;
+        if (forbiddenColumns.has(currentPos.x) && !forbiddenColumns.has(nextX)) score += 12;
+        if (nextY > currentPos.y) score += 4;
+        if (nextY > 2) score += 3;
+        return { dir, score };
+      });
+      scored.sort((a, b) => b.score - a.score);
+      return scored[0].dir;
+    }
+
+    function validDraggedPosition(pos, size, forbiddenColumns = new Set()) {
       const point = posFromIdx(pos, size);
-      return point.x > 1 && point.y > 2 && point.x < size - 2 && point.y < size - 2;
+      return point.x > 1 && point.y > 2 && point.x < size - 2 && point.y < size - 2 && !forbiddenColumns.has(point.x);
     }
 
     function verifyDraggedConstruction(candidate) {
@@ -986,7 +1070,7 @@
           return { solved: false, states: moves, depth: 0 };
         }
         if (block.correct) {
-          if (!validDraggedPosition(block.pos, candidate.size)) return { solved: false, states: moves, depth: 0 };
+          if (!validDraggedPosition(block.pos, candidate.size, candidate.targetColumns || new Set())) return { solved: false, states: moves, depth: 0 };
           moves += block.solutionMoves || 0;
         }
       }
@@ -1113,6 +1197,23 @@
       }
     }
 
+    function loadWordCycles() {
+      if (typeof localStorage === "undefined") return;
+      try {
+        wordCycles = JSON.parse(localStorage.getItem(WORD_CYCLE_STORAGE_KEY) || "{}");
+      } catch (error) {
+        wordCycles = {};
+      }
+    }
+
+    function saveWordCycles() {
+      if (typeof localStorage === "undefined") return;
+      try {
+        localStorage.setItem(WORD_CYCLE_STORAGE_KEY, JSON.stringify(wordCycles));
+      } catch (error) {
+      }
+    }
+
     function applySettingChange() {
       updateSettingLabels();
       saveSettings();
@@ -1130,16 +1231,36 @@
       loadNewLevel();
     }
 
-    function chooseDifferentWord(options) {
-      if (options.length <= 1) return sample(options);
-      let next = sample(options);
-      let tries = 0;
-      while (next.word === lastWordKey && tries < 8) {
-        next = sample(options);
-        tries++;
+    function chooseNextWord(options, lengthValue) {
+      const signature = wordListSignature(options);
+      const key = String(lengthValue);
+      let cycle = wordCycles[key];
+      if (!cycle || cycle.signature !== signature || !Array.isArray(cycle.order)) {
+        cycle = createWordCycle(options, signature);
       }
-      lastWordKey = next.word;
-      return next;
+      if (cycle.pointer >= cycle.order.length) {
+        cycle = createWordCycle(options, signature, cycle.lastWord);
+      }
+
+      const wordName = cycle.order[cycle.pointer];
+      cycle.pointer++;
+      cycle.lastWord = wordName;
+      wordCycles[key] = cycle;
+      saveWordCycles();
+      return options.find((entry) => entry.word === wordName) || options[0];
+    }
+
+    function createWordCycle(options, signature, avoidFirstWord = "") {
+      const order = shuffle(options.map((entry) => entry.word));
+      if (avoidFirstWord && order.length > 1 && order[0] === avoidFirstWord) {
+        const swapIndex = order.findIndex((word, index) => index > 0 && word !== avoidFirstWord);
+        if (swapIndex > 0) [order[0], order[swapIndex]] = [order[swapIndex], order[0]];
+      }
+      return { signature, order, pointer: 0, lastWord: avoidFirstWord };
+    }
+
+    function wordListSignature(options) {
+      return options.map((entry) => entry.word).sort().join("|");
     }
 
     function findFreeCell(grid, occupied, size, minY, forbiddenColumns = new Set()) {
@@ -1181,16 +1302,17 @@
       return sample(near.length ? near : cells).pos;
     }
 
-    function generateFallbackLevel(size, word, targetCells, startX, targetY, wallCount, minWallLength, maxWallLength, minMoves, maxMoves, reserved) {
+    function generateFallbackLevel(size, word, targetCells, startX, targetY, wallCount, minWallLength, maxWallLength, minMoves, maxMoves, reserved, targetColumns) {
       for (let effectiveWallCount = wallCount; effectiveWallCount >= 1; effectiveWallCount--) {
         for (let attempt = 0; attempt < GENERATION_ATTEMPTS; attempt++) {
           let grid = createGrid(size, reserved, effectiveWallCount, minWallLength, maxWallLength);
+          if (!grid) continue;
           if (countInteriorWalls(grid) < 1) grid = createSingleWallGrid(size, reserved);
           if (countInteriorWalls(grid) < 1) continue;
           const occupied = new Set(targetCells.map((cell) => String(cell)));
-          const distractors = createDistractorBlocks(word, distractorCount(word.syllables.length, size), grid, occupied, size, targetY + 2);
+          const distractors = createDistractorBlocks(word, distractorCount(word.syllables.length, size), grid, occupied, size, targetY + 2, targetColumns);
           if (!distractors) continue;
-          const blocks = createDraggedSolutionBlocks(word, grid, occupied, size, targetCells, minMoves, maxMoves);
+          const blocks = createDraggedSolutionBlocks(word, grid, occupied, size, targetCells, minMoves, maxMoves, targetColumns);
           if (!blocks) continue;
           const player = findFreeCell(grid, occupied, size, targetY + 2);
           if (player === null) continue;
@@ -1202,6 +1324,7 @@
             targetCells,
             targetY,
             startX,
+            targetColumns,
             blocks: shuffle(blocks.concat(distractors)),
             player,
             wallCount: effectiveWallCount,
@@ -1220,17 +1343,17 @@
         }
       }
 
-      return generateSimpleFallbackLevel(size, word, targetCells, startX, targetY, wallCount, minWallLength, maxWallLength, minMoves, maxMoves, reserved);
+      return generateSimpleFallbackLevel(size, word, targetCells, startX, targetY, wallCount, minWallLength, maxWallLength, minMoves, maxMoves, reserved, targetColumns);
     }
 
-    function generateSimpleFallbackLevel(size, word, targetCells, startX, targetY, wallCount, minWallLength, maxWallLength, minMoves, maxMoves, reserved) {
-      for (let attempt = 0; attempt < 40; attempt++) {
+    function generateSimpleFallbackLevel(size, word, targetCells, startX, targetY, wallCount, minWallLength, maxWallLength, minMoves, maxMoves, reserved, targetColumns) {
+      for (let attempt = 0; attempt < 360; attempt++) {
         const grid = createSingleWallGrid(size, reserved);
         if (countInteriorWalls(grid) < 1) continue;
         const occupied = new Set(targetCells.map((cell) => String(cell)));
-        const distractors = createDistractorBlocks(word, distractorCount(word.syllables.length, size), grid, occupied, size, targetY + 2);
+        const distractors = createDistractorBlocks(word, distractorCount(word.syllables.length, size), grid, occupied, size, targetY + 2, targetColumns);
         if (!distractors) continue;
-        const blocks = createDraggedSolutionBlocks(word, grid, occupied, size, targetCells, minMoves, maxMoves);
+        const blocks = createDraggedSolutionBlocks(word, grid, occupied, size, targetCells, minMoves, maxMoves, targetColumns);
         if (!blocks) continue;
         const player = findFreeCell(grid, occupied, size, targetY + 2);
         if (player === null) continue;
@@ -1241,6 +1364,7 @@
           targetCells,
           targetY,
           startX,
+          targetColumns,
           blocks: shuffle(blocks.concat(distractors)),
           player,
           wallCount: 1,
@@ -1258,7 +1382,41 @@
         }
       }
 
-      throw new Error("Unable to generate a dragged fallback level");
+      return generateEmergencyFallbackLevel(size, word, targetCells, startX, targetY, wallCount, minWallLength, maxWallLength, minMoves, maxMoves, reserved, targetColumns);
+    }
+
+    function generateEmergencyFallbackLevel(size, word, targetCells, startX, targetY, wallCount, minWallLength, maxWallLength, minMoves, maxMoves, reserved, targetColumns) {
+      const grid = createSingleWallGrid(size, reserved);
+      const occupied = new Set(targetCells.map((cell) => String(cell)));
+      const distractors = createDistractorBlocks(word, distractorCount(word.syllables.length, size), grid, occupied, size, targetY + 2, targetColumns) || [];
+      const blocks = [];
+      for (let i = 0; i < word.syllables.length; i++) {
+        const pos = findFreeCell(grid, occupied, size, targetY + 3, targetColumns);
+        if (pos === null) break;
+        blocks.push({ id: "c" + i, text: word.syllables[i], correct: true, pos, solutionMoves: minMoves });
+        occupied.add(String(pos));
+      }
+      const player = findFreeCell(grid, occupied, size, targetY + 2, targetColumns) || idx(1, size - 2, size);
+      const fallback = {
+        size,
+        grid,
+        word,
+        targetCells,
+        targetY,
+        startX,
+        targetColumns,
+        blocks: shuffle(blocks.concat(distractors)),
+        player,
+        wallCount: 1,
+        requestedWallCount: wallCount,
+        minWallLength,
+        maxWallLength,
+        minSolutionMoves: minMoves,
+        maxSolutionMoves: maxMoves,
+        solverStates: minMoves * Math.max(1, blocks.length),
+        solutionLength: minMoves * Math.max(1, blocks.length)
+      };
+      return fallback;
     }
 
     function verifyConstructedSolution(candidate) {
@@ -1754,6 +1912,7 @@
     async function initializeGame() {
       await loadWords();
       loadSavedSettings();
+      loadWordCycles();
       updateSettingLabels();
       loadNewLevel();
     }
