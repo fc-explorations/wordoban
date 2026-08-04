@@ -82,7 +82,9 @@
     }
 
     .subtitle {
+      width: min(280px, 100%);
       margin: 1px 0 0;
+      padding-inline-start: 16px;
       color: var(--muted);
       font-size: min(.66rem, 2.65vw);
       font-weight: 600;
@@ -681,6 +683,13 @@
       .logo {
         width: min(270px, 68vw);
         margin-inline: auto;
+      }
+
+      .subtitle {
+        width: min(270px, 68vw);
+        margin-inline: auto;
+        padding-inline-start: min(16px, 3.95vw);
+        text-align: left;
       }
 
       .toolbar-actions {
