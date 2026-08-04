@@ -49,13 +49,13 @@ Each entry needs:
 
 The game uses:
 
-- `assets/logo.png`
+- `assets/logo2-transparent.png`
 - `assets/block.png`
 - `assets/player.png`
 - `assets/background.jpg`
 - `assets/words.yaml`
 
-`assets/images.png` and other source images may exist locally as working files, but the game only needs the assets above.
+`assets/logo2.png`, `assets/images.png`, and other source images may exist locally as working files, but the game only needs the assets above.
 
 ## Technical Notes
 
