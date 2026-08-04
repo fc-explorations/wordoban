@@ -48,7 +48,7 @@
     header {
       display: grid;
       grid-template-columns: minmax(280px, .8fr) minmax(520px, 1.2fr);
-      align-items: center;
+      align-items: end;
       gap: clamp(22px, 3vw, 44px);
       padding: 7px;
       border: 1px solid rgba(157, 145, 123, .34);
@@ -75,7 +75,7 @@
     .logo {
       display: block;
       width: min(280px, 100%);
-      aspect-ratio: 2.75 / 1;
+      aspect-ratio: 3.05 / 1;
       object-fit: cover;
       object-position: center;
       filter: drop-shadow(0 3px 5px rgba(26, 62, 112, .08));
@@ -146,8 +146,8 @@
     }
 
     .toolbar-utility {
-      gap: 8px;
-      padding-inline: 5px;
+      gap: 10px;
+      padding-inline: 0;
     }
 
     .toolbar-primary {
