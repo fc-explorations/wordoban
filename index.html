@@ -50,7 +50,7 @@
       grid-template-columns: minmax(280px, .8fr) minmax(520px, 1.2fr);
       align-items: center;
       gap: clamp(22px, 3vw, 44px);
-      padding: clamp(14px, 1.8vw, 22px);
+      padding: 7px clamp(14px, 1.8vw, 22px);
       border: 1px solid rgba(157, 145, 123, .34);
       border-radius: 22px;
       background:
@@ -75,16 +75,18 @@
     .logo {
       display: block;
       width: min(280px, 100%);
-      height: auto;
+      aspect-ratio: 2.75 / 1;
+      object-fit: cover;
+      object-position: center;
       filter: drop-shadow(0 3px 5px rgba(26, 62, 112, .08));
     }
 
     .subtitle {
-      margin: 5px 0 0;
+      margin: 1px 0 0;
       color: var(--muted);
       font-size: clamp(.82rem, 1.1vw, .9rem);
       font-weight: 600;
-      line-height: 1.35;
+      line-height: 1.25;
     }
 
     .score-pill {
@@ -129,7 +131,7 @@
     .toolbar-actions {
       display: grid;
       align-content: center;
-      gap: 10px;
+      gap: 7px;
       width: 100%;
       min-width: 0;
     }
@@ -269,7 +271,7 @@
     .toolbar-utility .command-button,
     .toolbar-primary .command-button {
       min-width: 0;
-      min-height: 54px;
+      min-height: 48px;
       padding: 0 10px;
       gap: 7px;
       border: 1px solid rgba(151, 138, 116, .3);
@@ -317,7 +319,7 @@
 
     .setup-trigger {
       width: auto;
-      min-height: 54px;
+      min-height: 48px;
       border: 0;
       background: transparent;
       color: var(--accent);
@@ -666,8 +668,8 @@
 
       header {
         grid-template-columns: minmax(0, 1fr);
-        gap: 14px;
-        padding: 14px;
+        gap: 8px;
+        padding: 7px 10px;
       }
 
       .brand-panel {
@@ -682,7 +684,7 @@
       .toolbar-actions {
         width: min(640px, 100%);
         margin-inline: auto;
-        gap: 9px;
+        gap: 6px;
       }
 
       .toolbar-utility .command-button,
@@ -724,7 +726,7 @@
 
     @media (max-width: 390px) {
       header {
-        padding: 10px 8px;
+        padding: 5px 6px;
         border-radius: 16px;
       }
 
@@ -754,7 +756,7 @@
       .toolbar-utility .command-button,
       .toolbar-primary .command-button,
       .setup-trigger {
-        min-height: 50px;
+        min-height: 46px;
       }
 
       button.icon-label svg {
